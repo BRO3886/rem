@@ -245,10 +245,11 @@ func printListsTable(w io.Writer, lists []*reminder.List, showCount bool) {
 }
 
 func shortID(id string) string {
-	if len(id) > 8 {
-		return id[:8]
+	s := strings.TrimPrefix(id, "x-apple-reminder://")
+	if len(s) > 8 {
+		return s[:8]
 	}
-	return id
+	return s
 }
 
 func statusString(r *reminder.Reminder) string {

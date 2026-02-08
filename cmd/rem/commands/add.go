@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/BRO3886/rem/internal/parser"
 	"github.com/BRO3886/rem/internal/reminder"
@@ -84,8 +85,9 @@ func init() {
 }
 
 func shortIDStr(id string) string {
-	if len(id) > 8 {
-		return id[:8]
+	s := strings.TrimPrefix(id, "x-apple-reminder://")
+	if len(s) > 8 {
+		return s[:8]
 	}
-	return id
+	return s
 }

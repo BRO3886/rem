@@ -154,31 +154,62 @@ func parseISODate(s string) *time.Time {
 	return &local
 }
 
-// GetReminder retrieves a single reminder by ID.
+// GetReminder retrieves a single reminder by ID or ID prefix.
+// Uses bulk property access per-list to find the target, which is much faster
+// than the global app.reminders.byId() which is extremely slow.
 func (s *ReminderService) GetReminder(id string) (*reminder.Reminder, error) {
 	script := fmt.Sprintf(`
 const app = Application('Reminders');
-const r = app.reminders.byId('%s');
-const props = r.properties();
-const container = r.container();
-JSON.stringify({
-	id: props.id,
-	name: props.name,
-	body: props.body || null,
-	listName: container.name(),
-	completed: props.completed,
-	flagged: props.flagged,
-	priority: props.priority,
-	dueDate: props.dueDate ? props.dueDate.toISOString() : null,
-	remindMeDate: props.remindMeDate ? props.remindMeDate.toISOString() : null,
-	completionDate: props.completionDate ? props.completionDate.toISOString() : null,
-	creationDate: props.creationDate ? props.creationDate.toISOString() : null,
-	modDate: props.modificationDate ? props.modificationDate.toISOString() : null,
-});`, EscapeJXA(id))
+const targetId = '%s';
+const lists = app.lists();
+const fmtDate = d => d ? d.toISOString() : null;
+let result = null;
+for (const list of lists) {
+	const rems = list.reminders;
+	const n = rems.length;
+	if (n === 0) continue;
+	const ids = rems.id();
+	let idx = -1;
+	for (let i = 0; i < n; i++) {
+		const uid = ids[i].replace('x-apple-reminder://', '');
+		if (ids[i] === targetId || uid.toUpperCase().startsWith(targetId.toUpperCase())) {
+			idx = i;
+			break;
+		}
+	}
+	if (idx === -1) continue;
+	const names = rems.name();
+	const bodies = rems.body();
+	const completed = rems.completed();
+	const flagged = rems.flagged();
+	const priorities = rems.priority();
+	const dueDates = rems.dueDate();
+	const remindMeDates = rems.remindMeDate();
+	const completionDates = rems.completionDate();
+	const creationDates = rems.creationDate();
+	const modDates = rems.modificationDate();
+	result = {
+		id: ids[idx], name: names[idx],
+		body: bodies[idx] || null, listName: list.name(),
+		completed: completed[idx], flagged: flagged[idx],
+		priority: priorities[idx],
+		dueDate: fmtDate(dueDates[idx]),
+		remindMeDate: fmtDate(remindMeDates[idx]),
+		completionDate: fmtDate(completionDates[idx]),
+		creationDate: fmtDate(creationDates[idx]),
+		modDate: fmtDate(modDates[idx]),
+	};
+	break;
+}
+JSON.stringify(result);`, EscapeJXA(id))
 
 	output, err := s.exec.RunJXA(script)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get reminder: %w", err)
+	}
+
+	if output == "" || output == "null" {
+		return nil, fmt.Errorf("reminder not found: %s", id)
 	}
 
 	var jr jxaReminder

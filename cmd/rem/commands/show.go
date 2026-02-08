@@ -37,32 +37,11 @@ func init() {
 }
 
 // findReminderByID finds a reminder by full or partial ID.
+// Accepts full IDs (x-apple-reminder://UUID), bare UUIDs, or short prefixes.
 func findReminderByID(id string) (*reminder.Reminder, error) {
-	// First try direct lookup
 	r, err := reminderSvc.GetReminder(id)
-	if err == nil {
-		return r, nil
+	if err != nil {
+		return nil, fmt.Errorf("no reminder found with ID: %s", id)
 	}
-
-	// If that fails, try to find by prefix match across all reminders
-	reminders, listErr := reminderSvc.ListReminders(nil)
-	if listErr != nil {
-		return nil, fmt.Errorf("reminder not found: %w", err)
-	}
-
-	var matches []*reminder.Reminder
-	for _, rem := range reminders {
-		if len(rem.ID) >= len(id) && rem.ID[:len(id)] == id {
-			matches = append(matches, rem)
-		}
-	}
-
-	switch len(matches) {
-	case 0:
-		return nil, fmt.Errorf("no reminder found with ID prefix: %s", id)
-	case 1:
-		return matches[0], nil
-	default:
-		return nil, fmt.Errorf("ambiguous ID prefix '%s': matches %d reminders", id, len(matches))
-	}
+	return r, nil
 }

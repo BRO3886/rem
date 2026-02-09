@@ -14,7 +14,7 @@ A Go CLI that wraps macOS Reminders. Sub-200ms reads via cgo + EventKit. Single 
 ## Installation
 
 ```bash
-go install github.com/sidv/rem/cmd/rem@latest
+go install github.com/BRO3886/rem/cmd/rem@latest
 ```
 
 Or build from source:
@@ -168,7 +168,7 @@ rem list --incomplete -o json | jq -r '.[].name'
 For programmatic access, import `pkg/client`:
 
 ```go
-import "github.com/sidv/rem/pkg/client"
+import "github.com/BRO3886/rem/pkg/client"
 
 c := client.New()
 id, _ := c.CreateReminder(&client.CreateReminderInput{

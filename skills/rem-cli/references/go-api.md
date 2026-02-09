@@ -1,6 +1,6 @@
 # Public Go API Reference
 
-Import path: `github.com/sidv/rem/pkg/client`
+Import path: `github.com/BRO3886/rem/pkg/client`
 
 ## Client
 

@@ -48,7 +48,7 @@ func main() {
         panic(err)
     }
     for _, r := range reminders {
-        fmt.Printf("%s  %s  (due: %s)\n", r.ID[:8], r.Name, r.DueDate)
+        fmt.Printf("%s  %s  (due: %v)\n", r.ID[:8], r.Title, r.DueDate)
     }
 
     // Mark as done
@@ -163,13 +163,13 @@ c.DeleteList("Old List")
 
 ## Context-aware variants
 
-Every method has a `Context` variant for cancellation and timeout support:
+`CreateReminder` has a `Context` variant for cancellation and timeout support:
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 defer cancel()
 
-reminders, err := c.ListRemindersContext(ctx, opts)
+id, err := c.CreateReminderContext(ctx, input)
 ```
 
 ## Reminder model
@@ -179,14 +179,14 @@ The `Reminder` struct returned by read operations:
 ```go
 type Reminder struct {
     ID               string
-    Name             string
-    Body             string     // notes/body text
+    Title            string
+    Notes            string      // notes/body text
     ListName         string
-    DueDate          time.Time
-    RemindMeDate     time.Time
-    CompletionDate   time.Time
-    CreationDate     time.Time
-    ModificationDate time.Time
+    DueDate          *time.Time
+    RemindMeDate     *time.Time
+    CompletionDate   *time.Time
+    CreationDate     *time.Time
+    ModificationDate *time.Time
     Priority         Priority
     Flagged          bool
     Completed        bool

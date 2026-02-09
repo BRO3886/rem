@@ -1,3 +1,5 @@
+//go:build darwin
+
 // Package eventkit provides direct access to macOS Reminders via EventKit framework.
 // It uses cgo to call Objective-C code that wraps EventKit, producing a single binary
 // with no external helper process needed.

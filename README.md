@@ -1,18 +1,19 @@
 # rem
 
-A powerful CLI tool for macOS Reminders app. Manage your reminders and lists from the terminal with full CRUD operations, natural language date parsing, import/export, and a clean table UI.
+A blazing fast CLI for macOS Reminders. Sub-200ms reads via EventKit, natural language dates, import/export, and a public Go API — all in a single binary.
+
+**[Documentation](https://rem-2ut.pages.dev)** | **[Architecture](https://rem-2ut.pages.dev/docs/architecture/)** | **[Go API](https://rem-2ut.pages.dev/docs/api/)**
 
 ## Features
 
-- **Full CRUD** for reminders and lists via AppleScript/JXA
-- **Natural language dates**: `tomorrow`, `next friday at 2pm`, `in 3 hours`, `eod`
-- **Multiple output formats**: table, JSON, plain text
-- **Import/Export**: JSON and CSV with full property preservation
-- **Search**: full-text search across titles and notes
-- **Interactive mode**: step-by-step reminder creation wizard
-- **Statistics**: completion rates, overdue counts, per-list breakdown
-- **Public Go API**: `pkg/client` package for programmatic access
-- **Shell completions**: bash, zsh, fish
+- **Sub-200ms reads** — EventKit via cgo, direct memory access, no IPC
+- **Single binary** — EventKit compiled in via cgo, no helper processes
+- **Natural language dates** — `tomorrow`, `next friday at 2pm`, `in 3 hours`, `eod`
+- **19 commands** — full CRUD, search, stats, overdue, upcoming, interactive mode
+- **Multiple output formats** — table, JSON, plain text
+- **Import/Export** — JSON and CSV with full property round-trip
+- **Public Go API** — `pkg/client` package for programmatic access
+- **Shell completions** — bash, zsh, fish
 
 ## Installation
 
@@ -33,8 +34,9 @@ make build
 
 ## Requirements
 
-- macOS (uses AppleScript/JXA to interact with the Reminders app)
+- macOS 10.12+ (uses EventKit for reads, AppleScript for writes)
 - Go 1.21+ (for building from source)
+- Xcode Command Line Tools (cgo/clang + framework headers)
 - First run will prompt for Reminders app access in System Settings > Privacy & Security
 
 ## Quick Start
@@ -274,28 +276,44 @@ rem/
 │   ├── main.go
 │   └── commands/         # Cobra command definitions
 ├── internal/
-│   ├── applescript/      # AppleScript/JXA execution & templates
+│   ├── eventkit/         # cgo + Objective-C EventKit bridge (ALL reads)
+│   ├── applescript/      # AppleScript executor (writes only)
 │   ├── reminder/         # Domain models (Reminder, List, Priority)
 │   ├── parser/           # Natural language date parsing
 │   ├── export/           # JSON & CSV import/export
 │   └── ui/               # Table formatting, colored output
 ├── pkg/client/           # Public Go API
+├── website/              # Hugo documentation site
 ├── Makefile
 ├── LICENSE
 └── README.md
 ```
 
-The tool uses **JXA (JavaScript for Automation)** for bulk read operations (listing reminders/lists) which is significantly faster than traditional AppleScript loops, and **AppleScript** for write operations (create, update, delete) where the syntax is simpler.
+**Reads** go through `internal/eventkit/` — an Objective-C EventKit bridge compiled into the binary via cgo. Direct in-process access to the Reminders store, no IPC. All reads complete in under 200ms.
+
+**Writes** use AppleScript via `osascript` — simpler syntax for single-item create/update/delete operations (~0.5s per operation).
+
+## Performance
+
+Tested with 224 reminders across 12 lists:
+
+| Command | Time |
+|---------|------|
+| `rem lists` | 0.12s |
+| `rem list` (all 224) | 0.13s |
+| `rem show` (by prefix) | 0.11s |
+| `rem search` | 0.11s |
+| `rem stats` | 0.17s |
+
+See [Performance docs](https://rem-2ut.pages.dev/docs/performance/) for the full optimization story (JXA at 60s → EventKit at 0.13s).
 
 ## Known Limitations
 
-- **macOS only**: Requires the Reminders app and osascript
-- **No URL property**: Reminders AppleScript API has no URL field; URLs are stored in the notes/body field
-- **No tags**: Tags are not exposed via the AppleScript/JXA API
-- **No subtasks**: Sub-reminders are invisible to AppleScript
-- **No recurrence**: Recurring reminders cannot be set via the scripting API
-- **List deletion**: `delete list` may fail on some macOS versions
-- **No move operation**: Moving reminders between lists requires delete + recreate
+- **macOS only** — requires EventKit framework and osascript
+- **No URL property** — Reminders API has no URL field; URLs stored in body
+- **No tags/subtasks/recurrence** — not exposed via EventKit or AppleScript
+- **`--flagged` filter is slow** (~3-4s) — EventKit doesn't expose `flagged`, falls back to JXA
+- **List deletion** may fail on some macOS versions
 
 ## License
 

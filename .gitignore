@@ -3,5 +3,7 @@ bin/
 *.test
 *.out
 .DS_Store
+public/
 website/public/
 website/resources/
+.hugo_build.lock

@@ -1,0 +1,42 @@
+{{ define "main" }}
+<div class="docs-layout">
+  <aside class="docs-sidebar" id="docs-sidebar">
+    <nav class="sidebar-nav">
+      <div class="sidebar-section">
+        <h4>Documentation</h4>
+        {{ $currentURL := .RelPermalink }}
+        {{ range .Site.Menus.main }}
+          {{ if ne .Name "GitHub" }}
+            <a href="{{ .URL }}" class="sidebar-link{{ if eq .URL $currentURL }} active{{ end }}">
+              {{ .Name }}
+            </a>
+          {{ end }}
+        {{ end }}
+      </div>
+    </nav>
+  </aside>
+  <article class="docs-content">
+    <div class="docs-header fade-in">
+      <h1>{{ .Title }}</h1>
+      {{ with .Description }}<p class="docs-description">{{ . }}</p>{{ end }}
+    </div>
+    <div class="docs-body fade-in delay-1">
+      {{ .Content }}
+    </div>
+    <div class="docs-footer">
+      {{ with .NextInSection }}
+        <a href="{{ .Permalink }}" class="docs-nav-link docs-nav-prev">
+          <span class="docs-nav-label">Previous</span>
+          <span class="docs-nav-title">{{ .Title }}</span>
+        </a>
+      {{ end }}
+      {{ with .PrevInSection }}
+        <a href="{{ .Permalink }}" class="docs-nav-link docs-nav-next">
+          <span class="docs-nav-label">Next</span>
+          <span class="docs-nav-title">{{ .Title }}</span>
+        </a>
+      {{ end }}
+    </div>
+  </article>
+</div>
+{{ end }}

@@ -3,3 +3,5 @@ bin/
 *.test
 *.out
 .DS_Store
+website/public/
+website/resources/

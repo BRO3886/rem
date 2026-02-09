@@ -1,0 +1,6 @@
+name: rem-docs
+description: Apple-inspired documentation theme for rem CLI
+license: MIT
+min_version: "0.92.0"
+author:
+  name: Siddharth Verma

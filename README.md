@@ -2,7 +2,7 @@
 
 A blazing fast CLI for macOS Reminders. Sub-200ms reads via EventKit, natural language dates, import/export, and a public Go API — all in a single binary.
 
-**[Documentation](https://rem-2ut.pages.dev)** | **[Architecture](https://rem-2ut.pages.dev/docs/architecture/)** | **[Go API](https://rem-2ut.pages.dev/docs/api/)**
+**[Documentation](https://rem.sidv.dev)** | **[Architecture](https://rem.sidv.dev/docs/architecture/)** | **[Go API](https://rem.sidv.dev/docs/api/)**
 
 ## Features
 
@@ -305,7 +305,7 @@ Tested with 224 reminders across 12 lists:
 | `rem search` | 0.11s |
 | `rem stats` | 0.17s |
 
-See [Performance docs](https://rem-2ut.pages.dev/docs/performance/) for the full optimization story (JXA at 60s → EventKit at 0.13s).
+See [Performance docs](https://rem.sidv.dev/docs/performance/) for the full optimization story (JXA at 60s → EventKit at 0.13s).
 
 ## Known Limitations
 

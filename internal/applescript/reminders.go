@@ -6,10 +6,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/BRO3886/rem/internal/eventkit"
 	"github.com/BRO3886/rem/internal/reminder"
 )
 
-// ReminderService provides operations for reminders using AppleScript and JXA.
+// ReminderService provides operations for reminders using EventKit for reads
+// and AppleScript for writes.
 type ReminderService struct {
 	exec *Executor
 }
@@ -88,7 +90,7 @@ end tell`, dateSetup.String(), EscapeString(listName), strings.Join(props, ", ")
 	return id, nil
 }
 
-// helperReminder is the JSON structure returned by the Swift helper.
+// helperReminder is the JSON structure returned by the EventKit bridge.
 type helperReminder struct {
 	ID             string  `json:"id"`
 	Name           string  `json:"name"`
@@ -142,7 +144,7 @@ func parseISODate(s string) *time.Time {
 	if s == "" || s == "null" {
 		return nil
 	}
-	// Try RFC3339 with fractional seconds first (Swift ISO8601DateFormatter output)
+	// Try RFC3339 with fractional seconds first (ISO8601 output)
 	t, err := time.Parse("2006-01-02T15:04:05.000Z", s)
 	if err != nil {
 		t, err = time.Parse(time.RFC3339, s)
@@ -154,9 +156,9 @@ func parseISODate(s string) *time.Time {
 	return &local
 }
 
-// GetReminder retrieves a single reminder by ID or ID prefix using the Swift helper.
+// GetReminder retrieves a single reminder by ID or ID prefix via EventKit.
 func (s *ReminderService) GetReminder(id string) (*reminder.Reminder, error) {
-	output, err := s.exec.RunHelper("get", id)
+	output, err := eventkit.GetReminder(id)
 	if err != nil {
 		return nil, fmt.Errorf("reminder not found: %s", id)
 	}
@@ -173,33 +175,29 @@ func (s *ReminderService) GetReminder(id string) (*reminder.Reminder, error) {
 	return helperToReminder(&hr), nil
 }
 
-// ListReminders returns reminders matching the given filter using the Swift helper.
+// ListReminders returns reminders matching the given filter via EventKit.
 func (s *ReminderService) ListReminders(filter *reminder.ListFilter) ([]*reminder.Reminder, error) {
-	args := []string{"reminders"}
+	var listName, completed, search, dueBefore, dueAfter string
 
 	if filter != nil {
-		if filter.ListName != "" {
-			args = append(args, "--list", filter.ListName)
-		}
+		listName = filter.ListName
 		if filter.Completed != nil {
 			if *filter.Completed {
-				args = append(args, "--completed", "true")
+				completed = "true"
 			} else {
-				args = append(args, "--completed", "false")
+				completed = "false"
 			}
 		}
-		if filter.SearchQuery != "" {
-			args = append(args, "--search", filter.SearchQuery)
-		}
+		search = filter.SearchQuery
 		if filter.DueBefore != nil {
-			args = append(args, "--due-before", filter.DueBefore.UTC().Format("2006-01-02T15:04:05.000Z"))
+			dueBefore = filter.DueBefore.UTC().Format("2006-01-02T15:04:05.000Z")
 		}
 		if filter.DueAfter != nil {
-			args = append(args, "--due-after", filter.DueAfter.UTC().Format("2006-01-02T15:04:05.000Z"))
+			dueAfter = filter.DueAfter.UTC().Format("2006-01-02T15:04:05.000Z")
 		}
 	}
 
-	output, err := s.exec.RunHelper(args...)
+	output, err := eventkit.FetchReminders(listName, completed, search, dueBefore, dueAfter)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list reminders: %w", err)
 	}

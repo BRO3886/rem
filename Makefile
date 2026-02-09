@@ -1,23 +1,18 @@
 BINARY_NAME=rem
-HELPER_NAME=reminders-helper
 VERSION?=$(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 BUILD_TIME=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 LDFLAGS=-ldflags "-X main.version=$(VERSION) -X main.buildTime=$(BUILD_TIME)"
 
-.PHONY: all build build-helper install test clean lint fmt help completions
+.PHONY: all build install test clean lint fmt help completions
 
 all: build
 
-build: build-helper ## Build the binary and Swift helper
+build: ## Build the binary (includes EventKit via cgo)
+	@mkdir -p bin
 	go build $(LDFLAGS) -o bin/$(BINARY_NAME) ./cmd/rem/
 
-build-helper: ## Build the Swift EventKit helper for fast reads
-	@mkdir -p bin
-	swiftc -O -o bin/$(HELPER_NAME) internal/swift/helper.swift
-
-install: build ## Install the binary and helper to $GOPATH/bin
+install: build ## Install the binary to $GOPATH/bin
 	go install $(LDFLAGS) ./cmd/rem/
-	cp bin/$(HELPER_NAME) $(shell go env GOPATH)/bin/$(HELPER_NAME)
 
 test: ## Run tests
 	go test ./... -v

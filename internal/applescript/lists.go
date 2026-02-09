@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/BRO3886/rem/internal/eventkit"
 	"github.com/BRO3886/rem/internal/reminder"
 )
 
@@ -23,9 +24,9 @@ type helperList struct {
 	Count int    `json:"count"`
 }
 
-// GetLists returns all reminder lists using the Swift EventKit helper for speed.
+// GetLists returns all reminder lists using EventKit via cgo.
 func (s *ListService) GetLists() ([]*reminder.List, error) {
-	output, err := s.exec.RunHelper("lists")
+	output, err := eventkit.FetchLists()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get lists: %w", err)
 	}

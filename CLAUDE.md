@@ -4,12 +4,12 @@
 - **Conventional Commits**: ALL commits MUST follow [Conventional Commits](https://www.conventionalcommits.org/). Format: `type(scope): description`. Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`. No exceptions.
 
 ## What is this?
-Go CLI wrapping macOS Reminders. Uses a compiled Swift EventKit helper for fast reads (<200ms) and AppleScript for writes. Provides CRUD for reminders/lists, natural language dates, import/export, and a public Go API.
+Go CLI wrapping macOS Reminders. Uses cgo + Objective-C EventKit bridge for fast reads (<200ms) as a single binary. AppleScript for writes. Provides CRUD for reminders/lists, natural language dates, import/export, and a public Go API.
 
 ## Architecture
 - `cmd/rem/commands/` - Cobra CLI commands (one file per command)
-- `internal/swift/helper.swift` - Compiled Swift binary using EventKit for all reads (lists, reminders, get). ~100KB, <200ms for any query.
-- `internal/applescript/` - Go layer: `executor.go` runs the Swift helper for reads, `osascript` for writes. `reminders.go` and `lists.go` parse helper JSON output.
+- `internal/eventkit/` - **cgo + Objective-C EventKit bridge**. `eventkit_darwin.m` wraps EventKit framework, `eventkit.go` exposes Go functions. Compiled into the binary via cgo — no separate helper process.
+- `internal/applescript/` - Go layer: `executor.go` runs `osascript` for writes. `reminders.go` and `lists.go` call `internal/eventkit` for reads, parse JSON.
 - `internal/reminder/` - Domain models: `Reminder`, `List`, `Priority`
 - `internal/parser/` - Custom NL date parser (no external deps)
 - `internal/export/` - JSON/CSV import/export
@@ -17,10 +17,11 @@ Go CLI wrapping macOS Reminders. Uses a compiled Swift EventKit helper for fast 
 - `pkg/client/` - Public Go API abstracting all complexity
 
 ## Critical: Architecture Rules
-- **ALL reads go through `bin/reminders-helper`** (Swift EventKit) - instant for any number of reminders
+- **ALL reads go through `internal/eventkit/`** (cgo + ObjC EventKit) — in-process, no subprocess, <200ms
+- **Single binary** — EventKit linked via cgo, no separate helper binary needed
 - **Writes use AppleScript** (create/update/delete) - single-item operations, AppleScript syntax is simpler
 - **EventKit doesn't expose `flagged`** - JXA fallback only used when `--flagged` filter is active
-- **NEVER use JXA/AppleScript for reads** - osascript from Go exec.Command is 10-50x slower than EventKit
+- **cgo CFLAGS must include `-fobjc-arc`** — without ARC, ObjC objects get released prematurely and EventKit returns empty results
 - Notes field is `body`, NOT `notes` (in AppleScript)
 - No `url` property exists - URLs stored in `body` with `URL: ` prefix
 - Priority: 0=none, 1-4=high, 5=medium, 6-9=low
@@ -35,8 +36,7 @@ Go CLI wrapping macOS Reminders. Uses a compiled Swift EventKit helper for fast 
 
 ## Build & Test
 ```bash
-make build        # -> bin/rem + bin/reminders-helper
-make build-helper # Swift helper only
+make build        # -> bin/rem (single binary, includes EventKit via cgo)
 go test ./...     # unit tests (date parser, export, models)
 make completions  # bash/zsh/fish
 ```

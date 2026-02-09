@@ -88,8 +88,8 @@ end tell`, dateSetup.String(), EscapeString(listName), strings.Join(props, ", ")
 	return id, nil
 }
 
-// jxaReminder is the JSON structure returned by JXA scripts.
-type jxaReminder struct {
+// helperReminder is the JSON structure returned by the Swift helper.
+type helperReminder struct {
 	ID             string  `json:"id"`
 	Name           string  `json:"name"`
 	Body           *string `json:"body"`
@@ -104,34 +104,34 @@ type jxaReminder struct {
 	ModDate        *string `json:"modDate"`
 }
 
-func jxaToReminder(j *jxaReminder) *reminder.Reminder {
+func helperToReminder(h *helperReminder) *reminder.Reminder {
 	r := &reminder.Reminder{
-		ID:        j.ID,
-		Name:      j.Name,
-		ListName:  j.ListName,
-		Completed: j.Completed,
-		Flagged:   j.Flagged,
-		Priority:  reminder.Priority(j.Priority),
+		ID:        h.ID,
+		Name:      h.Name,
+		ListName:  h.ListName,
+		Completed: h.Completed,
+		Flagged:   h.Flagged,
+		Priority:  reminder.Priority(h.Priority),
 	}
 
-	if j.Body != nil {
-		r.Body = *j.Body
+	if h.Body != nil {
+		r.Body = *h.Body
 	}
 
-	if j.DueDate != nil {
-		r.DueDate = parseISODate(*j.DueDate)
+	if h.DueDate != nil {
+		r.DueDate = parseISODate(*h.DueDate)
 	}
-	if j.RemindMeDate != nil {
-		r.RemindMeDate = parseISODate(*j.RemindMeDate)
+	if h.RemindMeDate != nil {
+		r.RemindMeDate = parseISODate(*h.RemindMeDate)
 	}
-	if j.CompletionDate != nil {
-		r.CompletionDate = parseISODate(*j.CompletionDate)
+	if h.CompletionDate != nil {
+		r.CompletionDate = parseISODate(*h.CompletionDate)
 	}
-	if j.CreationDate != nil {
-		r.CreationDate = parseISODate(*j.CreationDate)
+	if h.CreationDate != nil {
+		r.CreationDate = parseISODate(*h.CreationDate)
 	}
-	if j.ModDate != nil {
-		r.ModificationDate = parseISODate(*j.ModDate)
+	if h.ModDate != nil {
+		r.ModificationDate = parseISODate(*h.ModDate)
 	}
 
 	r.URL = extractURL(r.Body)
@@ -142,10 +142,10 @@ func parseISODate(s string) *time.Time {
 	if s == "" || s == "null" {
 		return nil
 	}
-	// JXA Date.toISOString() returns UTC ISO 8601
-	t, err := time.Parse(time.RFC3339, s)
+	// Try RFC3339 with fractional seconds first (Swift ISO8601DateFormatter output)
+	t, err := time.Parse("2006-01-02T15:04:05.000Z", s)
 	if err != nil {
-		t, err = time.Parse("2006-01-02T15:04:05.000Z", s)
+		t, err = time.Parse(time.RFC3339, s)
 		if err != nil {
 			return nil
 		}
@@ -154,247 +154,85 @@ func parseISODate(s string) *time.Time {
 	return &local
 }
 
-// GetReminder retrieves a single reminder by ID or ID prefix.
-// Uses bulk property access per-list to find the target, which is much faster
-// than the global app.reminders.byId() which is extremely slow.
+// GetReminder retrieves a single reminder by ID or ID prefix using the Swift helper.
 func (s *ReminderService) GetReminder(id string) (*reminder.Reminder, error) {
-	script := fmt.Sprintf(`
-const app = Application('Reminders');
-const targetId = '%s';
-const lists = app.lists();
-const fmtDate = d => d ? d.toISOString() : null;
-let result = null;
-for (const list of lists) {
-	const rems = list.reminders;
-	const n = rems.length;
-	if (n === 0) continue;
-	const ids = rems.id();
-	let idx = -1;
-	for (let i = 0; i < n; i++) {
-		const uid = ids[i].replace('x-apple-reminder://', '');
-		if (ids[i] === targetId || uid.toUpperCase().startsWith(targetId.toUpperCase())) {
-			idx = i;
-			break;
-		}
-	}
-	if (idx === -1) continue;
-	const names = rems.name();
-	const bodies = rems.body();
-	const completed = rems.completed();
-	const flagged = rems.flagged();
-	const priorities = rems.priority();
-	const dueDates = rems.dueDate();
-	const remindMeDates = rems.remindMeDate();
-	const completionDates = rems.completionDate();
-	const creationDates = rems.creationDate();
-	const modDates = rems.modificationDate();
-	result = {
-		id: ids[idx], name: names[idx],
-		body: bodies[idx] || null, listName: list.name(),
-		completed: completed[idx], flagged: flagged[idx],
-		priority: priorities[idx],
-		dueDate: fmtDate(dueDates[idx]),
-		remindMeDate: fmtDate(remindMeDates[idx]),
-		completionDate: fmtDate(completionDates[idx]),
-		creationDate: fmtDate(creationDates[idx]),
-		modDate: fmtDate(modDates[idx]),
-	};
-	break;
-}
-JSON.stringify(result);`, EscapeJXA(id))
-
-	output, err := s.exec.RunJXA(script)
+	output, err := s.exec.RunHelper("get", id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get reminder: %w", err)
+		return nil, fmt.Errorf("reminder not found: %s", id)
 	}
 
 	if output == "" || output == "null" {
 		return nil, fmt.Errorf("reminder not found: %s", id)
 	}
 
-	var jr jxaReminder
-	if err := json.Unmarshal([]byte(output), &jr); err != nil {
+	var hr helperReminder
+	if err := json.Unmarshal([]byte(output), &hr); err != nil {
 		return nil, fmt.Errorf("failed to parse reminder: %w", err)
 	}
 
-	return jxaToReminder(&jr), nil
+	return helperToReminder(&hr), nil
 }
 
-// jxaBulkResult is the columnar JSON structure returned by the bulk JXA list script.
-type jxaBulkResult struct {
-	IDs            []string  `json:"ids"`
-	Names          []string  `json:"names"`
-	Bodies         []*string `json:"bodies"`
-	ListNames      []string  `json:"listNames"`
-	Completed      []bool    `json:"completed"`
-	Flagged        []bool    `json:"flagged"`
-	Priorities     []int     `json:"priorities"`
-	DueDates       []*string `json:"dueDates"`
-	RemindMeDates  []*string `json:"remindMeDates"`
-	CompletionDates []*string `json:"completionDates"`
-	CreationDates  []*string `json:"creationDates"`
-	ModDates       []*string `json:"modDates"`
-}
-
-// ListReminders returns reminders matching the given filter.
+// ListReminders returns reminders matching the given filter using the Swift helper.
 func (s *ReminderService) ListReminders(filter *reminder.ListFilter) ([]*reminder.Reminder, error) {
-	// Determine source - specific list or all lists
-	useSpecificList := filter != nil && filter.ListName != ""
+	args := []string{"reminders"}
 
-	var script string
-	if useSpecificList {
-		// For a specific list, use bulk property access on the list's reminders collection
-		script = fmt.Sprintf(`
-const app = Application('Reminders');
-const list = app.lists.byName('%s');
-const rems = list.reminders;
-const ids = rems.id();
-const names = rems.name();
-const bodies = rems.body();
-const completed = rems.completed();
-const flagged = rems.flagged();
-const priorities = rems.priority();
-const dueDates = rems.dueDate();
-const remindMeDates = rems.remindMeDate();
-const completionDates = rems.completionDate();
-const creationDates = rems.creationDate();
-const modDates = rems.modificationDate();
-const listName = '%s';
-const n = ids.length;
-const listNames = new Array(n).fill(listName);
-const fmtDate = d => d ? d.toISOString() : null;
-JSON.stringify({
-	ids, names,
-	bodies: bodies.map(b => b || null),
-	listNames,
-	completed, flagged, priorities,
-	dueDates: dueDates.map(fmtDate),
-	remindMeDates: remindMeDates.map(fmtDate),
-	completionDates: completionDates.map(fmtDate),
-	creationDates: creationDates.map(fmtDate),
-	modDates: modDates.map(fmtDate),
-});`, EscapeJXA(filter.ListName), EscapeJXA(filter.ListName))
-	} else {
-		// For all lists, iterate through each list and use bulk access per list
-		script = `
-const app = Application('Reminders');
-const lists = app.lists();
-let allIds=[], allNames=[], allBodies=[], allListNames=[];
-let allCompleted=[], allFlagged=[], allPriorities=[];
-let allDueDates=[], allRemindMeDates=[], allCompletionDates=[];
-let allCreationDates=[], allModDates=[];
-const fmtDate = d => d ? d.toISOString() : null;
-for (const list of lists) {
-	const ln = list.name();
-	const rems = list.reminders;
-	const n = rems.length;
-	if (n === 0) continue;
-	const ids = rems.id();
-	const names = rems.name();
-	const bodies = rems.body();
-	const completed = rems.completed();
-	const flagged = rems.flagged();
-	const priorities = rems.priority();
-	const dueDates = rems.dueDate();
-	const remindMeDates = rems.remindMeDate();
-	const completionDates = rems.completionDate();
-	const creationDates = rems.creationDate();
-	const modDates = rems.modificationDate();
-	for (let i = 0; i < n; i++) {
-		allIds.push(ids[i]);
-		allNames.push(names[i]);
-		allBodies.push(bodies[i] || null);
-		allListNames.push(ln);
-		allCompleted.push(completed[i]);
-		allFlagged.push(flagged[i]);
-		allPriorities.push(priorities[i]);
-		allDueDates.push(fmtDate(dueDates[i]));
-		allRemindMeDates.push(fmtDate(remindMeDates[i]));
-		allCompletionDates.push(fmtDate(completionDates[i]));
-		allCreationDates.push(fmtDate(creationDates[i]));
-		allModDates.push(fmtDate(modDates[i]));
-	}
-}
-JSON.stringify({
-	ids:allIds, names:allNames, bodies:allBodies, listNames:allListNames,
-	completed:allCompleted, flagged:allFlagged, priorities:allPriorities,
-	dueDates:allDueDates, remindMeDates:allRemindMeDates,
-	completionDates:allCompletionDates, creationDates:allCreationDates,
-	modDates:allModDates,
-});`
+	if filter != nil {
+		if filter.ListName != "" {
+			args = append(args, "--list", filter.ListName)
+		}
+		if filter.Completed != nil {
+			if *filter.Completed {
+				args = append(args, "--completed", "true")
+			} else {
+				args = append(args, "--completed", "false")
+			}
+		}
+		if filter.SearchQuery != "" {
+			args = append(args, "--search", filter.SearchQuery)
+		}
+		if filter.DueBefore != nil {
+			args = append(args, "--due-before", filter.DueBefore.UTC().Format("2006-01-02T15:04:05.000Z"))
+		}
+		if filter.DueAfter != nil {
+			args = append(args, "--due-after", filter.DueAfter.UTC().Format("2006-01-02T15:04:05.000Z"))
+		}
 	}
 
-	output, err := s.exec.RunJXA(script)
+	output, err := s.exec.RunHelper(args...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list reminders: %w", err)
 	}
 
-	if output == "" {
+	if output == "" || output == "[]" {
 		return []*reminder.Reminder{}, nil
 	}
 
-	var bulk jxaBulkResult
-	if err := json.Unmarshal([]byte(output), &bulk); err != nil {
+	var hrs []helperReminder
+	if err := json.Unmarshal([]byte(output), &hrs); err != nil {
 		return nil, fmt.Errorf("failed to parse reminders: %w", err)
 	}
 
-	var reminders []*reminder.Reminder
-	for i := range bulk.IDs {
-		r := &reminder.Reminder{
-			ID:        bulk.IDs[i],
-			Name:      bulk.Names[i],
-			ListName:  bulk.ListNames[i],
-			Completed: bulk.Completed[i],
-			Flagged:   bulk.Flagged[i],
-			Priority:  reminder.Priority(bulk.Priorities[i]),
-		}
-		if i < len(bulk.Bodies) && bulk.Bodies[i] != nil {
-			r.Body = *bulk.Bodies[i]
-		}
-		if i < len(bulk.DueDates) && bulk.DueDates[i] != nil {
-			r.DueDate = parseISODate(*bulk.DueDates[i])
-		}
-		if i < len(bulk.RemindMeDates) && bulk.RemindMeDates[i] != nil {
-			r.RemindMeDate = parseISODate(*bulk.RemindMeDates[i])
-		}
-		if i < len(bulk.CompletionDates) && bulk.CompletionDates[i] != nil {
-			r.CompletionDate = parseISODate(*bulk.CompletionDates[i])
-		}
-		if i < len(bulk.CreationDates) && bulk.CreationDates[i] != nil {
-			r.CreationDate = parseISODate(*bulk.CreationDates[i])
-		}
-		if i < len(bulk.ModDates) && bulk.ModDates[i] != nil {
-			r.ModificationDate = parseISODate(*bulk.ModDates[i])
-		}
-		r.URL = extractURL(r.Body)
+	// Apply flagged filter in Go since EventKit doesn't expose flagged.
+	// For --flagged filter, we need JXA to get the actual flagged status.
+	needsFlagged := filter != nil && filter.Flagged != nil && *filter.Flagged
 
-		// Apply filters
-		if filter != nil {
-			if filter.Completed != nil {
-				if *filter.Completed != r.Completed {
-					continue
-				}
-			}
-			if filter.Flagged != nil && *filter.Flagged && !r.Flagged {
+	var flaggedIDs map[string]bool
+	if needsFlagged {
+		flaggedIDs, err = s.fetchFlaggedIDs()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	reminders := make([]*reminder.Reminder, 0, len(hrs))
+	for i := range hrs {
+		r := helperToReminder(&hrs[i])
+
+		if needsFlagged {
+			r.Flagged = flaggedIDs[r.ID]
+			if !r.Flagged {
 				continue
-			}
-			if filter.DueBefore != nil {
-				if r.DueDate == nil || r.DueDate.After(*filter.DueBefore) {
-					continue
-				}
-			}
-			if filter.DueAfter != nil {
-				if r.DueDate == nil || r.DueDate.Before(*filter.DueAfter) {
-					continue
-				}
-			}
-			if filter.SearchQuery != "" {
-				query := strings.ToLower(filter.SearchQuery)
-				nameMatch := strings.Contains(strings.ToLower(r.Name), query)
-				bodyMatch := strings.Contains(strings.ToLower(r.Body), query)
-				if !nameMatch && !bodyMatch {
-					continue
-				}
 			}
 		}
 
@@ -402,6 +240,43 @@ JSON.stringify({
 	}
 
 	return reminders, nil
+}
+
+// fetchFlaggedIDs uses JXA to get the set of flagged reminder IDs.
+// This is needed because EventKit doesn't expose the flagged property.
+func (s *ReminderService) fetchFlaggedIDs() (map[string]bool, error) {
+	script := `
+const app = Application('Reminders');
+const lists = app.lists();
+const result = [];
+for (const list of lists) {
+	const n = list.reminders.length;
+	if (n === 0) continue;
+	const ids = list.reminders.id();
+	const flagged = list.reminders.flagged();
+	for (let i = 0; i < n; i++) {
+		if (flagged[i]) result.push(ids[i]);
+	}
+}
+JSON.stringify(result);`
+
+	output, err := s.exec.RunJXA(script)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch flagged status: %w", err)
+	}
+
+	var ids []string
+	if output != "" && output != "[]" {
+		if err := json.Unmarshal([]byte(output), &ids); err != nil {
+			return nil, fmt.Errorf("failed to parse flagged IDs: %w", err)
+		}
+	}
+
+	m := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		m[id] = true
+	}
+	return m, nil
 }
 
 // UpdateReminder updates properties of an existing reminder.

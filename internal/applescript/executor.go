@@ -4,21 +4,70 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 )
 
-// Executor runs AppleScript and JXA commands via osascript.
+// Executor runs AppleScript and JXA commands via osascript,
+// and the compiled Swift helper for fast reads via EventKit.
 type Executor struct {
-	timeout time.Duration
+	timeout    time.Duration
+	helperPath string
 }
 
 // NewExecutor creates a new Executor.
 func NewExecutor() *Executor {
 	return &Executor{
-		timeout: 120 * time.Second,
+		timeout:    120 * time.Second,
+		helperPath: findHelperPath(),
 	}
+}
+
+// findHelperPath locates the reminders-helper binary.
+// It checks: next to the current executable, then in PATH.
+func findHelperPath() string {
+	// Check next to the current executable
+	if exe, err := os.Executable(); err == nil {
+		dir := filepath.Dir(exe)
+		candidate := filepath.Join(dir, "reminders-helper")
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate
+		}
+	}
+	// Check PATH
+	if p, err := exec.LookPath("reminders-helper"); err == nil {
+		return p
+	}
+	return ""
+}
+
+// RunHelper executes the Swift EventKit helper with the given arguments.
+func (e *Executor) RunHelper(args ...string) (string, error) {
+	if e.helperPath == "" {
+		return "", fmt.Errorf("reminders-helper not found; run 'make build' to compile it")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, e.helperPath, args...)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err := cmd.Run()
+	if err != nil {
+		errMsg := strings.TrimSpace(stderr.String())
+		if errMsg == "" {
+			errMsg = err.Error()
+		}
+		return "", fmt.Errorf("helper error: %s", errMsg)
+	}
+
+	return strings.TrimSpace(stdout.String()), nil
 }
 
 // Run executes an AppleScript and returns the output.

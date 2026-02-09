@@ -17,30 +17,15 @@ func NewListService(exec *Executor) *ListService {
 	return &ListService{exec: exec}
 }
 
-type jxaList struct {
+type helperList struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
-	Color string `json:"color"`
 	Count int    `json:"count"`
 }
 
-// GetLists returns all reminder lists.
+// GetLists returns all reminder lists using the Swift EventKit helper for speed.
 func (s *ListService) GetLists() ([]*reminder.List, error) {
-	script := `
-const app = Application('Reminders');
-const lists = app.lists();
-const result = lists.map(l => {
-	const props = l.properties();
-	return {
-		id: props.id,
-		name: props.name,
-		color: props.color || '',
-		count: l.reminders.length,
-	};
-});
-JSON.stringify(result);`
-
-	output, err := s.exec.RunJXA(script)
+	output, err := s.exec.RunHelper("lists")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get lists: %w", err)
 	}
@@ -49,18 +34,17 @@ JSON.stringify(result);`
 		return []*reminder.List{}, nil
 	}
 
-	var jxaLists []jxaList
-	if err := json.Unmarshal([]byte(output), &jxaLists); err != nil {
+	var helperLists []helperList
+	if err := json.Unmarshal([]byte(output), &helperLists); err != nil {
 		return nil, fmt.Errorf("failed to parse lists: %w", err)
 	}
 
-	lists := make([]*reminder.List, 0, len(jxaLists))
-	for _, jl := range jxaLists {
+	lists := make([]*reminder.List, 0, len(helperLists))
+	for _, hl := range helperLists {
 		lists = append(lists, &reminder.List{
-			ID:    jl.ID,
-			Name:  jl.Name,
-			Color: jl.Color,
-			Count: jl.Count,
+			ID:    hl.ID,
+			Name:  hl.Name,
+			Count: hl.Count,
 		})
 	}
 
@@ -69,33 +53,18 @@ JSON.stringify(result);`
 
 // GetList returns a single list by name.
 func (s *ListService) GetList(name string) (*reminder.List, error) {
-	script := fmt.Sprintf(`
-const app = Application('Reminders');
-const l = app.lists.byName('%s');
-const props = l.properties();
-JSON.stringify({
-	id: props.id,
-	name: props.name,
-	color: props.color || '',
-	count: l.reminders.length,
-});`, EscapeJXA(name))
-
-	output, err := s.exec.RunJXA(script)
+	lists, err := s.GetLists()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get list '%s': %w", name, err)
+		return nil, err
 	}
 
-	var jl jxaList
-	if err := json.Unmarshal([]byte(output), &jl); err != nil {
-		return nil, fmt.Errorf("failed to parse list: %w", err)
+	for _, l := range lists {
+		if l.Name == name {
+			return l, nil
+		}
 	}
 
-	return &reminder.List{
-		ID:    jl.ID,
-		Name:  jl.Name,
-		Color: jl.Color,
-		Count: jl.Count,
-	}, nil
+	return nil, fmt.Errorf("list not found: %s", name)
 }
 
 // CreateList creates a new reminder list.

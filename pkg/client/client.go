@@ -2,12 +2,15 @@
 
 // Package client provides a public Go API for interacting with macOS Reminders.
 //
-// This package abstracts all AppleScript complexity and provides a clean,
-// idiomatic Go interface for CRUD operations on reminders and lists.
+// This package uses go-eventkit for fast, native EventKit access and provides
+// a clean, idiomatic Go interface for CRUD operations on reminders and lists.
 //
 // Usage:
 //
-//	c := client.New()
+//	c, err := client.New()
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
 //
 //	// Create a reminder
 //	id, err := c.CreateReminder(&client.CreateReminderInput{
@@ -30,23 +33,29 @@ package client
 import (
 	"context"
 
-	"github.com/BRO3886/rem/internal/applescript"
+	"github.com/BRO3886/go-eventkit/reminders"
+	"github.com/BRO3886/rem/internal/service"
 	"github.com/BRO3886/rem/internal/reminder"
 )
 
 // Client provides methods for interacting with macOS Reminders.
 type Client struct {
-	reminderSvc *applescript.ReminderService
-	listSvc     *applescript.ListService
+	reminderSvc *service.ReminderService
+	listSvc     *service.ListService
 }
 
 // New creates a new Reminders client.
-func New() *Client {
-	exec := applescript.NewExecutor()
-	return &Client{
-		reminderSvc: applescript.NewReminderService(exec),
-		listSvc:     applescript.NewListService(exec),
+// Returns an error if Reminders access is denied or unavailable.
+func New() (*Client, error) {
+	ekClient, err := reminders.New()
+	if err != nil {
+		return nil, err
 	}
+	exec := service.NewExecutor()
+	return &Client{
+		reminderSvc: service.NewReminderService(ekClient, exec),
+		listSvc:     service.NewListService(ekClient, exec),
+	}, nil
 }
 
 // CreateReminder creates a new reminder and returns its ID.
@@ -100,13 +109,13 @@ func (c *Client) ListReminders(opts *ListOptions) ([]*Reminder, error) {
 		}
 	}
 
-	reminders, err := c.reminderSvc.ListReminders(filter)
+	items, err := c.reminderSvc.ListReminders(filter)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]*Reminder, 0, len(reminders))
-	for _, r := range reminders {
+	result := make([]*Reminder, 0, len(items))
+	for _, r := range items {
 		result = append(result, toPublicReminder(r))
 	}
 	return result, nil

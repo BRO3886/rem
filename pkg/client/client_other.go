@@ -11,5 +11,5 @@ var errUnsupported = fmt.Errorf("rem client: only supported on macOS (darwin)")
 type Client struct{}
 
 // New creates a new Reminders client.
-// Panics on non-darwin platforms.
-func New() *Client { panic(errUnsupported) }
+// Returns an error on non-darwin platforms.
+func New() (*Client, error) { return nil, errUnsupported }

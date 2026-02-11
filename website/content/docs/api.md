@@ -6,7 +6,7 @@ weight: 4
 
 ## Overview
 
-rem exposes a public Go API in `pkg/client/` that wraps all the complexity of EventKit and AppleScript into clean, type-safe functions. Import it to manage macOS Reminders from your own Go programs.
+rem exposes a public Go API in `pkg/client/` that wraps `go-eventkit` and provides clean, type-safe functions for managing macOS Reminders from your own Go programs.
 
 ```bash
 go get github.com/BRO3886/rem
@@ -25,13 +25,17 @@ import (
 )
 
 func main() {
-    c := client.New()
+    c, err := client.New()
+    if err != nil {
+        panic(err)
+    }
 
     // Create a reminder
+    due := time.Now().Add(24 * time.Hour)
     id, err := c.CreateReminder(&client.CreateReminderInput{
         Title:    "Deploy to production",
         ListName: "Work",
-        DueDate:  time.Now().Add(24 * time.Hour),
+        DueDate:  &due,
         Priority: client.PriorityHigh,
     })
     if err != nil {
@@ -61,10 +65,13 @@ func main() {
 All operations start with creating a client:
 
 ```go
-c := client.New()
+c, err := client.New()
+if err != nil {
+    log.Fatal(err)
+}
 ```
 
-The client manages the underlying EventKit store (for reads) and AppleScript executor (for writes).
+The client initializes go-eventkit for EventKit access. `New()` returns an error if Reminders access is denied or the platform is unsupported.
 
 ## Creating reminders
 
@@ -198,6 +205,6 @@ type Reminder struct {
 
 All methods return standard Go errors. Common failure modes:
 
-- **Permission denied**: macOS TCC hasn't granted Reminders access
-- **Not found**: reminder ID doesn't match any reminder
-- **AppleScript timeout**: write operation exceeded 30s (very rare)
+- **Permission denied**: macOS TCC hasn't granted Reminders access (`reminders.ErrAccessDenied`)
+- **Not found**: reminder ID doesn't match any reminder (`reminders.ErrNotFound`)
+- **Unsupported platform**: running on non-macOS (`reminders.ErrUnsupported`)

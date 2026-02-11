@@ -3,6 +3,7 @@ module github.com/BRO3886/rem
 go 1.24.5
 
 require (
+	github.com/BRO3886/go-eventkit v0.1.1
 	github.com/fatih/color v1.18.0
 	github.com/olekukonko/tablewriter v1.1.3
 	github.com/spf13/cobra v1.10.2

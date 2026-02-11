@@ -1,7 +1,11 @@
 package commands
 
 import (
-	"github.com/BRO3886/rem/internal/applescript"
+	"fmt"
+	"os"
+
+	"github.com/BRO3886/go-eventkit/reminders"
+	"github.com/BRO3886/rem/internal/service"
 	"github.com/spf13/cobra"
 )
 
@@ -9,15 +13,20 @@ var (
 	outputFormat string
 	noColor      bool
 
-	exec        *applescript.Executor
-	reminderSvc *applescript.ReminderService
-	listSvc     *applescript.ListService
+	exec        *service.Executor
+	reminderSvc *service.ReminderService
+	listSvc     *service.ListService
 )
 
 func init() {
-	exec = applescript.NewExecutor()
-	reminderSvc = applescript.NewReminderService(exec)
-	listSvc = applescript.NewListService(exec)
+	client, err := reminders.New()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: failed to initialize Reminders access: %v\n", err)
+		os.Exit(1)
+	}
+	exec = service.NewExecutor()
+	reminderSvc = service.NewReminderService(client, exec)
+	listSvc = service.NewListService(client, exec)
 }
 
 var rootCmd = &cobra.Command{

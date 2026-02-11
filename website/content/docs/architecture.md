@@ -1,12 +1,12 @@
 ---
 title: "Architecture"
-description: "How rem achieves sub-200ms reads with a single binary — cgo, EventKit, AppleScript, and the design decisions behind them."
+description: "How rem achieves sub-200ms operations with a single binary — go-eventkit, EventKit, and the design decisions behind them."
 weight: 3
 ---
 
 ## Overview
 
-rem uses a **split architecture**: EventKit (via cgo) for reads, AppleScript for writes. This gives the best of both worlds — instant reads with direct memory access and simple writes with AppleScript's property syntax.
+rem uses **go-eventkit** (`github.com/BRO3886/go-eventkit`) for both reads and writes via EventKit's cgo bridge, with AppleScript only for list CRUD and flagged operations that EventKit doesn't support.
 
 <div class="arch-diagram">
   <div class="arch-layer">
@@ -26,20 +26,17 @@ rem uses a **split architecture**: EventKit (via cgo) for reads, AppleScript for
   <div class="arch-layer arch-split">
     <div class="arch-box arch-read">
       <span class="arch-badge arch-badge-fast">&#60; 200ms</span>
-      <span class="arch-label">Read Path</span>
-      <span class="arch-sublabel">EventKit + cgo</span>
-      <span class="arch-detail">internal/eventkit/</span>
-      <span class="arch-file">eventkit_darwin.m</span>
-      <span class="arch-file">eventkit.go</span>
+      <span class="arch-label">EventKit Path</span>
+      <span class="arch-sublabel">go-eventkit (cgo)</span>
+      <span class="arch-detail">Reads + Writes</span>
+      <span class="arch-file">reminders, lists, CRUD</span>
     </div>
     <div class="arch-box arch-write">
       <span class="arch-badge arch-badge-write">~0.5s</span>
-      <span class="arch-label">Write Path</span>
-      <span class="arch-sublabel">AppleScript</span>
-      <span class="arch-detail">internal/applescript/</span>
-      <span class="arch-file">executor.go</span>
-      <span class="arch-file">reminders.go</span>
-      <span class="arch-file">lists.go</span>
+      <span class="arch-label">AppleScript Path</span>
+      <span class="arch-sublabel">osascript fallback</span>
+      <span class="arch-detail">internal/service/</span>
+      <span class="arch-file">list CRUD, flagged</span>
     </div>
   </div>
   <div class="arch-arrow">&#8595;</div>
@@ -55,23 +52,21 @@ rem uses a **split architecture**: EventKit (via cgo) for reads, AppleScript for
   </div>
 </div>
 
-## Read path: EventKit via cgo
+## Main path: go-eventkit
 
-All read operations go through `internal/eventkit/`, which embeds Objective-C code directly into the Go binary via cgo.
+All reminder read and write operations go through `go-eventkit` (`github.com/BRO3886/go-eventkit/reminders`), which provides native EventKit bindings via cgo + Objective-C.
 
 ### How it works
 
-1. A Go function (e.g., `eventkit.FetchReminders()`) calls a C function via cgo
-2. The C function is implemented in Objective-C (`eventkit_darwin.m`)
-3. The ObjC code creates an `EKEventStore`, queries the EventKit framework
-4. Results are serialized as a JSON string and returned as `char*`
-5. Go converts the string and parses JSON into domain objects
-
-The entire round-trip — from Go, through cgo, into EventKit, back through JSON parsing — completes in under 200ms.
+1. rem creates a `reminders.Client` via `reminders.New()` — this requests TCC authorization
+2. Read operations (e.g., `client.Reminders(opts...)`) call into cgo → Objective-C → EventKit
+3. Write operations (e.g., `client.CreateReminder(input)`) go through the same path
+4. Results are serialized as JSON strings across the cgo boundary and parsed into Go types
+5. The entire round-trip completes in under 200ms for both reads and writes
 
 ### Key implementation details
 
-**Store initialization** happens once via `dispatch_once`:
+**Store initialization** happens once via `dispatch_once` inside go-eventkit:
 
 ```objc
 static EKEventStore *store = nil;
@@ -82,19 +77,7 @@ dispatch_once(&onceToken, ^{
 });
 ```
 
-**Synchronous fetching** uses `dispatch_semaphore` since EventKit's fetch API is completion-based:
-
-```objc
-dispatch_semaphore_t sema = dispatch_semaphore_create(0);
-[store fetchRemindersMatchingPredicate:pred
-    completion:^(NSArray<EKReminder *> *reminders) {
-        // serialize to JSON
-        dispatch_semaphore_signal(sema);
-    }];
-dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
-```
-
-**ARC is mandatory.** The cgo CFLAGS include `-fobjc-arc`. Without ARC, objects created inside completion handlers are released prematurely, causing silent empty results or crashes.
+**ARC is mandatory.** go-eventkit's cgo CFLAGS include `-fobjc-arc`. Without ARC, objects created inside completion handlers are released prematurely, causing silent empty results or crashes.
 
 ### Why not JXA or AppleScript for reads?
 
@@ -102,31 +85,28 @@ JXA (JavaScript for Automation) was rem's original read layer. Each property acc
 
 EventKit is an in-process framework — direct memory access to the reminder store with no IPC. Result: **0.13 seconds** for the same dataset. That's a **462x speedup**.
 
-## Write path: AppleScript
+## AppleScript fallback
 
-Create, update, and delete operations use AppleScript executed via `osascript`:
+Three operations still use AppleScript via `osascript`:
+
+1. **List create/rename/delete** — go-eventkit doesn't support list CRUD operations
+2. **Flag/unflag reminders** — EventKit doesn't expose the `flagged` property
+3. **Default list name** — not exposed by go-eventkit
 
 ```applescript
 tell application "Reminders"
-    set newReminder to make new reminder in list "Work" ¬
-        with properties {name:"Ship v2.0", due date:date "2026-02-14", priority:1}
-    return id of newReminder
+    set newList to make new list with properties {name:"My List"}
+    return id of newList
 end tell
 ```
 
-### Why AppleScript for writes?
+### The flagged exception
 
-- **Simpler syntax**: `with properties {...}` sets everything in one call
-- **EventKit writes** require a more verbose save/commit cycle
-- **Write operations are single-item**: the ~0.5s overhead of `osascript` is acceptable for one reminder at a time
-
-## The flagged exception
-
-EventKit's `EKReminder` does not expose a `flagged` property. When the `--flagged` filter is active, rem falls back to JXA to fetch flagged reminder IDs. This is the only remaining slow path (~3-4 seconds) but is rarely used.
+EventKit's `EKReminder` does not expose a `flagged` property. When the `--flagged` filter is active, rem falls back to JXA to fetch flagged reminder IDs. This is the only remaining slow path (~3-4 seconds) but is rarely used. Flag/unflag write operations use AppleScript.
 
 ## Single binary
 
-The EventKit bridge compiles directly into the Go binary via cgo. `go build` detects the `.m` file, invokes Clang to compile the Objective-C, and links the EventKit and Foundation frameworks. The result is a single binary with no external dependencies.
+go-eventkit's Objective-C code compiles directly into the Go binary via cgo. `go build` detects the `.m` files, invokes Clang to compile the Objective-C, and links the EventKit and Foundation frameworks. The result is a single binary with no external dependencies.
 
 This means `go install github.com/BRO3886/rem/cmd/rem@latest` works out of the box — no separate compilation step, no helper binaries to distribute.
 
@@ -134,16 +114,11 @@ This means `go install github.com/BRO3886/rem/cmd/rem@latest` works out of the b
 
 ```
 internal/
-├── eventkit/              # cgo + ObjC EventKit bridge
-│   ├── eventkit_darwin.h  # C header (3 functions)
-│   ├── eventkit_darwin.m  # ObjC implementation (~190 lines)
-│   └── eventkit.go        # Go wrapper with cgo directives
-│
-├── applescript/           # AppleScript executor + service
-│   ├── executor.go        # Runs osascript with 30s timeout
-│   ├── reminders.go       # CRUD operations (reads → eventkit)
-│   ├── lists.go           # List operations (reads → eventkit)
-│   └── parser.go          # JSON parsing from EventKit responses
+├── service/               # Service layer (go-eventkit + AppleScript fallback)
+│   ├── executor.go        # Runs osascript (list CRUD, flagged)
+│   ├── reminders.go       # ReminderService wrapping go-eventkit
+│   ├── lists.go           # ListService wrapping go-eventkit + AppleScript
+│   └── parser.go          # URL extraction from notes
 │
 ├── reminder/              # Domain models
 │   └── model.go           # Reminder, List, Priority types
@@ -161,15 +136,16 @@ internal/
 
 ## Dependencies
 
-rem uses only three external Go dependencies:
+rem uses four external Go dependencies:
 
 | Package | Purpose |
 |---------|---------|
+| `BRO3886/go-eventkit` | Native EventKit bindings (cgo + ObjC, reads AND writes) |
 | `spf13/cobra` | CLI framework (commands, flags, help) |
 | `olekukonko/tablewriter` | Terminal table formatting |
 | `fatih/color` | Terminal colors |
 
-System frameworks linked via cgo:
+System frameworks linked via cgo (through go-eventkit):
 
 | Framework | Purpose |
 |-----------|---------|
@@ -178,9 +154,12 @@ System frameworks linked via cgo:
 
 ## Design decisions
 
-### JSON as the cgo bridge format
+### go-eventkit as a standalone library
 
-The Objective-C code returns JSON strings rather than passing struct fields across the cgo boundary. This keeps the cgo interface to just 3 functions (`ek_fetch_lists`, `ek_fetch_reminders`, `ek_get_reminder`) and reuses existing Go JSON parsing. The serialization cost is negligible — under 1ms for 224 reminders.
+The EventKit bridge was extracted from rem into a standalone Go library (`github.com/BRO3886/go-eventkit`). This provides:
+- **Reusability** — other Go projects can use EventKit without rem
+- **Separation of concerns** — rem is a thin CLI wrapper, go-eventkit handles all cgo/EventKit complexity
+- **Calendar support** — go-eventkit also supports Calendar/Events, which rem doesn't use
 
 ### Custom date parser
 

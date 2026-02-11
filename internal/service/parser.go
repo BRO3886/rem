@@ -1,4 +1,4 @@
-package applescript
+package service
 
 import "strings"
 

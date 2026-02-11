@@ -20,7 +20,7 @@ Every read command completes in under 200ms. Tested with 224 reminders across 12
 | `rem upcoming` | 0.12s |
 | `rem export --format json` | 0.13s |
 
-Write operations (via AppleScript) take 0.5-0.8 seconds — the `osascript` subprocess has a ~0.4s baseline overhead.
+Write operations (create, update, delete, complete) now also go through EventKit via go-eventkit, completing in under 200ms. Only list CRUD and flagged operations still use AppleScript (~0.5s).
 
 ## The optimization journey
 
@@ -58,6 +58,10 @@ Replaced the Swift helper with an Objective-C file compiled directly into the Go
 
 **The key insight:** `go build` automatically compiles `.m` (Objective-C) files when cgo is enabled. No separate compilation step. `go install` just works.
 
+### Stage 5: go-eventkit (fast reads AND writes)
+
+Extracted the EventKit bridge into a standalone library (`github.com/BRO3886/go-eventkit`) and extended it to support writes (create, update, delete, complete/uncomplete) — all through EventKit. This eliminated AppleScript for reminder operations entirely, bringing write times from ~0.5s to under 200ms. AppleScript is now only used for list CRUD and flagged operations.
+
 ## Before vs after
 
 | Command | Before (JXA) | After (EventKit) | Speedup |
@@ -91,9 +95,9 @@ EventKit is an in-process framework. When you call `fetchRemindersMatchingPredic
 
 JXA/AppleScript, by contrast, sends Apple Events to the Reminders.app process. Each event is serialized, sent over Mach IPC, deserialized, processed, and the result sent back the same way. For bulk operations, this overhead compounds dramatically.
 
-## Why AppleScript is fine for writes
+## Writes are now fast too
 
-Write operations are single-item: you create one reminder, update one reminder, delete one reminder. The 0.5s overhead of spawning `osascript` is acceptable for a CLI command that creates one thing. EventKit writes would save ~0.4s per operation but require more verbose code for the same result.
+Since the migration to go-eventkit, all reminder write operations (create, update, delete, complete/uncomplete) go through EventKit and complete in under 200ms — the same speed as reads. Only list CRUD and flagged operations still use AppleScript (~0.5s).
 
 ## Known slow path
 

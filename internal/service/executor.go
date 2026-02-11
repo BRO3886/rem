@@ -1,6 +1,6 @@
 //go:build darwin
 
-package applescript
+package service
 
 import (
 	"bytes"

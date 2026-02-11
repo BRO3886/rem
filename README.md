@@ -1,12 +1,12 @@
 # rem
 
-A blazing fast CLI for macOS Reminders. Sub-200ms reads via EventKit, natural language dates, import/export, and a public Go API — all in a single binary.
+A blazing fast CLI for macOS Reminders. Sub-200ms reads AND writes via EventKit, natural language dates, import/export, and a public Go API — all in a single binary.
 
 **[Documentation](https://rem.sidv.dev)** | **[Architecture](https://rem.sidv.dev/docs/architecture/)** | **[Go API](https://rem.sidv.dev/docs/api/)**
 
 ## Features
 
-- **Sub-200ms reads** — EventKit via cgo, direct memory access, no IPC
+- **Sub-200ms reads AND writes** — EventKit via cgo (go-eventkit), direct memory access, no IPC
 - **Single binary** — EventKit compiled in via cgo, no helper processes
 - **Natural language dates** — `tomorrow`, `next friday at 2pm`, `in 3 hours`, `eod`
 - **19 commands** — full CRUD, search, stats, overdue, upcoming, interactive mode
@@ -34,7 +34,7 @@ make build
 
 ## Requirements
 
-- macOS 10.12+ (uses EventKit for reads, AppleScript for writes)
+- macOS 10.12+ (uses EventKit for reads and writes via go-eventkit, AppleScript for list CRUD only)
 - Go 1.21+ (for building from source)
 - Xcode Command Line Tools (cgo/clang + framework headers)
 - First run will prompt for Reminders app access in System Settings > Privacy & Security
@@ -213,7 +213,10 @@ import (
 )
 
 func main() {
-    c := client.New()
+    c, err := client.New()
+    if err != nil {
+        panic(err)
+    }
 
     // Create a reminder
     due := time.Now().Add(24 * time.Hour)
@@ -252,7 +255,7 @@ func main() {
 
 | Method | Description |
 |--------|-------------|
-| `New()` | Create a new client |
+| `New()` | Create a new client (returns error if access denied) |
 | `CreateReminder(input)` | Create a reminder, returns ID |
 | `GetReminder(id)` | Get a reminder by ID |
 | `ListReminders(opts)` | List reminders with filters |
@@ -276,8 +279,7 @@ rem/
 │   ├── main.go
 │   └── commands/         # Cobra command definitions
 ├── internal/
-│   ├── eventkit/         # cgo + Objective-C EventKit bridge (ALL reads)
-│   ├── applescript/      # AppleScript executor (writes only)
+│   ├── service/          # Service layer wrapping go-eventkit + AppleScript for list CRUD
 │   ├── reminder/         # Domain models (Reminder, List, Priority)
 │   ├── parser/           # Natural language date parsing
 │   ├── export/           # JSON & CSV import/export
@@ -289,9 +291,9 @@ rem/
 └── README.md
 ```
 
-**Reads** go through `internal/eventkit/` — an Objective-C EventKit bridge compiled into the binary via cgo. Direct in-process access to the Reminders store, no IPC. All reads complete in under 200ms.
+**Reads and writes** go through `go-eventkit` (`github.com/BRO3886/go-eventkit`) — an Objective-C EventKit bridge compiled into the binary via cgo. Direct in-process access to the Reminders store, no IPC. All operations complete in under 200ms.
 
-**Writes** use AppleScript via `osascript` — simpler syntax for single-item create/update/delete operations (~0.5s per operation).
+**List CRUD and flagged** use AppleScript via `osascript` — go-eventkit does not support list create/rename/delete, and EventKit doesn't expose the flagged property.
 
 ## Performance
 
@@ -310,9 +312,9 @@ See [Performance docs](https://rem.sidv.dev/docs/performance/) for the full opti
 ## Known Limitations
 
 - **macOS only** — requires EventKit framework and osascript
-- **No URL property** — Reminders API has no URL field; URLs stored in body
-- **No tags/subtasks/recurrence** — not exposed via EventKit or AppleScript
+- **No tags/subtasks** — not exposed via EventKit
 - **`--flagged` filter is slow** (~3-4s) — EventKit doesn't expose `flagged`, falls back to JXA
+- **List CRUD uses AppleScript** — go-eventkit doesn't support list create/rename/delete
 - **List deletion** may fail on some macOS versions
 
 ## License

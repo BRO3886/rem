@@ -165,21 +165,21 @@ rem list --incomplete -o json | jq -r '.[].name'
 
 ## Public Go API
 
-For programmatic access, import `pkg/client`:
+For programmatic access, use [`go-eventkit`](https://github.com/BRO3886/go-eventkit) directly:
 
 ```go
-import "github.com/BRO3886/rem/pkg/client"
+import "github.com/BRO3886/go-eventkit/reminders"
 
-c := client.New()
-id, _ := c.CreateReminder(&client.CreateReminderInput{
+client, _ := reminders.New()
+r, _ := client.CreateReminder(reminders.CreateReminderInput{
     Title:    "Buy milk",
     ListName: "Shopping",
-    Priority: client.PriorityHigh,
+    Priority: reminders.PriorityHigh,
 })
-reminders, _ := c.ListReminders(&client.ListOptions{Incomplete: true})
+items, _ := client.Reminders(reminders.WithCompleted(false))
 ```
 
-See [references/go-api.md](references/go-api.md) for the full API surface.
+See [go-eventkit docs](https://github.com/BRO3886/go-eventkit) for the full API surface.
 
 ## Limitations
 

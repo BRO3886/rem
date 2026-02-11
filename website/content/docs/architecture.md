@@ -18,8 +18,8 @@ rem uses **go-eventkit** (`github.com/BRO3886/go-eventkit`) for both reads and w
   <div class="arch-arrow">&#8595;</div>
   <div class="arch-layer">
     <div class="arch-box arch-full">
-      <span class="arch-label">Public Go API</span>
-      <span class="arch-detail">pkg/client/client.go</span>
+      <span class="arch-label">Service Layer</span>
+      <span class="arch-detail">internal/service/</span>
     </div>
   </div>
   <div class="arch-arrow">&#8595;</div>

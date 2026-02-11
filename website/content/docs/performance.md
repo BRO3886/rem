@@ -50,7 +50,7 @@ Concurrent `osascript` processes didn't help — Reminders.app serializes all Ap
 
 Built a compiled Swift binary using the EventKit framework. EventKit is an in-process framework — direct memory access, no IPC. All reads dropped to under 250ms.
 
-The tradeoff: the build produced two binaries (`rem` + `reminders-helper`), complicating installation and making `pkg/client` harder to distribute as a Go library.
+The tradeoff: the build produced two binaries (`rem` + `reminders-helper`), complicating installation and distribution.
 
 ### Stage 4: cgo + Objective-C (fast, single binary)
 

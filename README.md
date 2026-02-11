@@ -12,7 +12,7 @@ A blazing fast CLI for macOS Reminders. Sub-200ms reads AND writes via EventKit,
 - **19 commands** — full CRUD, search, stats, overdue, upcoming, interactive mode
 - **Multiple output formats** — table, JSON, plain text
 - **Import/Export** — JSON and CSV with full property round-trip
-- **Public Go API** — `pkg/client` package for programmatic access
+- **Public Go API** — powered by [go-eventkit](https://github.com/BRO3886/go-eventkit) for programmatic access
 - **Shell completions** — bash, zsh, fish
 
 ## Installation
@@ -200,7 +200,11 @@ rem supports natural language dates:
 
 ## Public Go API
 
-The `pkg/client` package provides a clean Go API for programmatic access:
+For programmatic access to macOS Reminders, use [**go-eventkit**](https://github.com/BRO3886/go-eventkit) directly — the same library that powers rem and [cal](https://github.com/BRO3886/cal):
+
+```bash
+go get github.com/BRO3886/go-eventkit
+```
 
 ```go
 package main
@@ -209,67 +213,49 @@ import (
     "fmt"
     "time"
 
-    "github.com/BRO3886/rem/pkg/client"
+    "github.com/BRO3886/go-eventkit/reminders"
 )
 
 func main() {
-    c, err := client.New()
+    client, err := reminders.New()
     if err != nil {
         panic(err)
     }
 
     // Create a reminder
     due := time.Now().Add(24 * time.Hour)
-    id, err := c.CreateReminder(&client.CreateReminderInput{
+    r, err := client.CreateReminder(reminders.CreateReminderInput{
         Title:    "Buy groceries",
         ListName: "Personal",
         DueDate:  &due,
-        Priority: client.PriorityHigh,
+        Priority: reminders.PriorityHigh,
     })
     if err != nil {
         panic(err)
     }
-    fmt.Println("Created:", id)
+    fmt.Println("Created:", r.ID)
 
     // List incomplete reminders
-    reminders, _ := c.ListReminders(&client.ListOptions{
-        ListName:   "Personal",
-        Incomplete: true,
-    })
-    for _, r := range reminders {
-        fmt.Printf("- %s (due: %v)\n", r.Title, r.DueDate)
+    items, _ := client.Reminders(
+        reminders.WithList("Personal"),
+        reminders.WithCompleted(false),
+    )
+    for _, item := range items {
+        fmt.Printf("- %s (due: %v)\n", item.Title, item.DueDate)
     }
 
     // Complete a reminder
-    _ = c.CompleteReminder(id)
+    client.CompleteReminder(r.ID)
 
-    // Manage lists
-    lists, _ := c.GetLists()
+    // Get all lists
+    lists, _ := client.Lists()
     for _, l := range lists {
-        fmt.Printf("%s (%d reminders)\n", l.Name, l.Count)
+        fmt.Printf("%s (%d reminders)\n", l.Title, l.Count)
     }
 }
 ```
 
-### API Methods
-
-| Method | Description |
-|--------|-------------|
-| `New()` | Create a new client (returns error if access denied) |
-| `CreateReminder(input)` | Create a reminder, returns ID |
-| `GetReminder(id)` | Get a reminder by ID |
-| `ListReminders(opts)` | List reminders with filters |
-| `UpdateReminder(id, input)` | Update reminder properties |
-| `DeleteReminder(id)` | Delete a reminder |
-| `CompleteReminder(id)` | Mark as complete |
-| `UncompleteReminder(id)` | Mark as incomplete |
-| `FlagReminder(id)` | Flag a reminder |
-| `UnflagReminder(id)` | Remove flag |
-| `GetLists()` | Get all lists |
-| `CreateList(name)` | Create a list |
-| `RenameList(old, new)` | Rename a list |
-| `DeleteList(name)` | Delete a list |
-| `DefaultListName()` | Get default list name |
+See the [go-eventkit README](https://github.com/BRO3886/go-eventkit) for the full API reference.
 
 ## Architecture
 
@@ -284,7 +270,6 @@ rem/
 │   ├── parser/           # Natural language date parsing
 │   ├── export/           # JSON & CSV import/export
 │   └── ui/               # Table formatting, colored output
-├── pkg/client/           # Public Go API
 ├── website/              # Hugo documentation site
 ├── Makefile
 ├── LICENSE

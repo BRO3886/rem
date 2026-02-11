@@ -4,7 +4,7 @@
 - **Conventional Commits**: ALL commits MUST follow [Conventional Commits](https://www.conventionalcommits.org/). Format: `type(scope): description`. Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`. No exceptions.
 
 ## What is this?
-Go CLI wrapping macOS Reminders. Uses `go-eventkit` (cgo + Objective-C EventKit) for fast reads AND writes (<200ms) as a single binary. AppleScript only for list CRUD and flagged operations. Provides CRUD for reminders/lists, natural language dates, import/export, and a public Go API.
+Go CLI wrapping macOS Reminders. Uses `go-eventkit` (cgo + Objective-C EventKit) for fast reads AND writes (<200ms) as a single binary. AppleScript only for list CRUD and flagged operations. Provides CRUD for reminders/lists, natural language dates, and import/export. For programmatic Go access, use `go-eventkit` directly.
 
 ## Architecture
 - `cmd/rem/commands/` - Cobra CLI commands (one file per command)
@@ -13,7 +13,6 @@ Go CLI wrapping macOS Reminders. Uses `go-eventkit` (cgo + Objective-C EventKit)
 - `internal/parser/` - Custom NL date parser (no external deps)
 - `internal/export/` - JSON/CSV import/export
 - `internal/ui/` - Table (`olekukonko/tablewriter` v1.x), plain, JSON output
-- `pkg/client/` - Public Go API abstracting all complexity
 
 ## Critical: Architecture Rules
 - **ALL reads AND writes go through `go-eventkit`** (`github.com/BRO3886/go-eventkit/reminders`) — in-process EventKit via cgo, <200ms

@@ -158,11 +158,27 @@ err := client.DeleteReminder(id)
 // Get all lists
 lists, err := client.Lists()
 for _, l := range lists {
-    fmt.Printf("%s (%d reminders)\n", l.Title, l.Count)
+    fmt.Printf("%s (%d reminders, source: %s)\n", l.Title, l.Count, l.Source)
 }
+
+// Create a list
+list, err := client.CreateList(reminders.CreateListInput{
+    Title:  "Shopping",
+    Source: "iCloud",    // required — use Lists() to discover sources
+    Color:  "#FF6961",   // optional
+})
+
+// Rename a list
+newTitle := "Groceries"
+list, err = client.UpdateList(list.ID, reminders.UpdateListInput{
+    Title: &newTitle,
+})
+
+// Delete a list
+err = client.DeleteList(list.ID)
 ```
 
-Note: List create/rename/delete is not supported by go-eventkit. Use the `rem` CLI for list management.
+Immutable system lists (e.g., Siri suggestions) return `reminders.ErrImmutable` on update/delete.
 
 ## Reminder model
 
@@ -202,6 +218,9 @@ if errors.Is(err, reminders.ErrNotFound) {
 }
 if errors.Is(err, reminders.ErrUnsupported) {
     // running on non-macOS
+}
+if errors.Is(err, reminders.ErrImmutable) {
+    // list is immutable (system list)
 }
 ```
 

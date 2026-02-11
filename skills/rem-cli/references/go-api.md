@@ -126,10 +126,26 @@ r, err := client.UncompleteReminder("abc12345")
 ## List Operations
 
 ```go
+// Get all lists
 lists, err := client.Lists()
-```
 
-Note: List create/rename/delete is not supported by go-eventkit. Use the `rem` CLI for list management.
+// Create a list (Source is required — discover from existing lists)
+list, err := client.CreateList(reminders.CreateListInput{
+    Title:  "Shopping",
+    Source: "iCloud",    // Required
+    Color:  "#FF6961",   // Optional
+})
+
+// Rename a list
+newTitle := "Groceries"
+list, err = client.UpdateList(list.ID, reminders.UpdateListInput{
+    Title: &newTitle,
+})
+
+// Delete a list
+err = client.DeleteList(list.ID)
+// Returns ErrImmutable for system lists
+```
 
 ## Notes
 

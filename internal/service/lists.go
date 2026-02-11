@@ -10,7 +10,8 @@ import (
 )
 
 // ListService provides operations for reminder lists.
-// Uses go-eventkit for reads, AppleScript for writes (create/rename/delete).
+// Uses go-eventkit for all operations (reads and writes).
+// AppleScript is only used for querying the default list name.
 type ListService struct {
 	client *reminders.Client
 	exec   *Executor
@@ -52,35 +53,76 @@ func (s *ListService) GetList(name string) (*reminder.List, error) {
 	return nil, fmt.Errorf("list not found: %s", name)
 }
 
-// CreateList creates a new reminder list via AppleScript.
+// findListByName looks up a list by name and returns the go-eventkit List.
+func (s *ListService) findListByName(name string) (*reminders.List, error) {
+	ekLists, err := s.client.Lists()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get lists: %w", err)
+	}
+
+	for _, l := range ekLists {
+		if l.Title == name {
+			return &l, nil
+		}
+	}
+
+	return nil, fmt.Errorf("list not found: %s", name)
+}
+
+// defaultSource discovers the default source name from existing lists.
+// Falls back to "iCloud" if no lists exist.
+func (s *ListService) defaultSource() (string, error) {
+	ekLists, err := s.client.Lists()
+	if err != nil {
+		return "", fmt.Errorf("failed to get lists: %w", err)
+	}
+
+	for _, l := range ekLists {
+		if l.Source != "" {
+			return l.Source, nil
+		}
+	}
+
+	return "iCloud", nil
+}
+
+// CreateList creates a new reminder list via go-eventkit.
+// The list is created in the default source (discovered from existing lists).
 func (s *ListService) CreateList(name string) (*reminder.List, error) {
 	if name == "" {
 		return nil, fmt.Errorf("list name is required")
 	}
 
-	script := fmt.Sprintf(`tell application "Reminders"
-	set newList to make new list with properties {name:"%s"}
-	return id of newList
-end tell`, EscapeString(name))
+	source, err := s.defaultSource()
+	if err != nil {
+		return nil, err
+	}
 
-	id, err := s.exec.Run(script)
+	created, err := s.client.CreateList(reminders.CreateListInput{
+		Title:  name,
+		Source: source,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create list: %w", err)
 	}
 
-	return &reminder.List{
-		ID:   id,
-		Name: name,
-	}, nil
+	return fromEventKitList(created), nil
 }
 
-// RenameList renames an existing list via AppleScript.
+// RenameList renames an existing list via go-eventkit.
 func (s *ListService) RenameList(oldName, newName string) error {
-	script := fmt.Sprintf(`tell application "Reminders"
-	set name of list "%s" to "%s"
-end tell`, EscapeString(oldName), EscapeString(newName))
+	ekList, err := s.findListByName(oldName)
+	if err != nil {
+		return err
+	}
 
-	_, err := s.exec.Run(script)
+	if ekList.ReadOnly {
+		return fmt.Errorf("cannot rename list '%s': list is immutable", oldName)
+	}
+
+	_, err = s.client.UpdateList(ekList.ID, reminders.UpdateListInput{
+		Title: &newName,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to rename list: %w", err)
 	}
@@ -88,21 +130,26 @@ end tell`, EscapeString(oldName), EscapeString(newName))
 	return nil
 }
 
-// DeleteList deletes a list by name via AppleScript.
+// DeleteList deletes a list by name via go-eventkit.
 func (s *ListService) DeleteList(name string) error {
-	script := fmt.Sprintf(`tell application "Reminders"
-	delete list "%s"
-end tell`, EscapeString(name))
-
-	_, err := s.exec.Run(script)
+	ekList, err := s.findListByName(name)
 	if err != nil {
-		return fmt.Errorf("failed to delete list (this may not work on all macOS versions): %w", err)
+		return err
+	}
+
+	if ekList.ReadOnly {
+		return fmt.Errorf("cannot delete list '%s': list is immutable", name)
+	}
+
+	if err := s.client.DeleteList(ekList.ID); err != nil {
+		return fmt.Errorf("failed to delete list: %w", err)
 	}
 
 	return nil
 }
 
 // GetDefaultListName returns the name of the default reminder list via AppleScript.
+// EventKit does not expose which list is the "default" list, so AppleScript is used.
 func (s *ListService) GetDefaultListName() (string, error) {
 	output, err := s.exec.Run(`tell application "Reminders" to get name of default list`)
 	if err != nil {

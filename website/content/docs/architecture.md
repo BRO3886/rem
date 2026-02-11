@@ -6,7 +6,7 @@ weight: 3
 
 ## Overview
 
-rem uses **go-eventkit** (`github.com/BRO3886/go-eventkit`) for both reads and writes via EventKit's cgo bridge, with AppleScript only for list CRUD and flagged operations that EventKit doesn't support.
+rem uses **go-eventkit** (`github.com/BRO3886/go-eventkit`) for all reads and writes — including reminder CRUD and list CRUD — via EventKit's cgo bridge. AppleScript is only used for flagged operations and default list name queries that EventKit doesn't support.
 
 <div class="arch-diagram">
   <div class="arch-layer">
@@ -36,7 +36,7 @@ rem uses **go-eventkit** (`github.com/BRO3886/go-eventkit`) for both reads and w
       <span class="arch-label">AppleScript Path</span>
       <span class="arch-sublabel">osascript fallback</span>
       <span class="arch-detail">internal/service/</span>
-      <span class="arch-file">list CRUD, flagged</span>
+      <span class="arch-file">flagged, default list</span>
     </div>
   </div>
   <div class="arch-arrow">&#8595;</div>
@@ -87,18 +87,10 @@ EventKit is an in-process framework — direct memory access to the reminder sto
 
 ## AppleScript fallback
 
-Three operations still use AppleScript via `osascript`:
+Two operations still use AppleScript via `osascript`:
 
-1. **List create/rename/delete** — go-eventkit doesn't support list CRUD operations
-2. **Flag/unflag reminders** — EventKit doesn't expose the `flagged` property
-3. **Default list name** — not exposed by go-eventkit
-
-```applescript
-tell application "Reminders"
-    set newList to make new list with properties {name:"My List"}
-    return id of newList
-end tell
-```
+1. **Flag/unflag reminders** — EventKit doesn't expose the `flagged` property
+2. **Default list name** — not exposed by go-eventkit
 
 ### The flagged exception
 
@@ -114,10 +106,10 @@ This means `go install github.com/BRO3886/rem/cmd/rem@latest` works out of the b
 
 ```
 internal/
-├── service/               # Service layer (go-eventkit + AppleScript fallback)
-│   ├── executor.go        # Runs osascript (list CRUD, flagged)
+├── service/               # Service layer (go-eventkit + AppleScript for flagged only)
+│   ├── executor.go        # Runs osascript (flagged ops, default list name)
 │   ├── reminders.go       # ReminderService wrapping go-eventkit
-│   ├── lists.go           # ListService wrapping go-eventkit + AppleScript
+│   ├── lists.go           # ListService wrapping go-eventkit
 │   └── parser.go          # URL extraction from notes
 │
 ├── reminder/              # Domain models

@@ -10,10 +10,12 @@ import (
 
 func TestFromEventKitList(t *testing.T) {
 	l := &reminders.List{
-		ID:    "list-123",
-		Title: "Shopping",
-		Color: "#FF6961",
-		Count: 5,
+		ID:       "list-123",
+		Title:    "Shopping",
+		Color:    "#FF6961",
+		Count:    5,
+		Source:   "iCloud",
+		ReadOnly: false,
 	}
 
 	result := fromEventKitList(l)
@@ -48,5 +50,44 @@ func TestFromEventKitListEmptyFields(t *testing.T) {
 	}
 	if result.Count != 0 {
 		t.Errorf("Count = %d, want 0", result.Count)
+	}
+}
+
+func TestFromEventKitListFieldMapping(t *testing.T) {
+	// Verify that go-eventkit Title maps to internal Name
+	l := &reminders.List{
+		ID:    "list-789",
+		Title: "Work Tasks",
+		Color: "#0000FF",
+		Count: 42,
+	}
+
+	result := fromEventKitList(l)
+
+	// go-eventkit uses Title, internal model uses Name
+	if result.Name != "Work Tasks" {
+		t.Errorf("Name = %q, want %q (mapped from Title)", result.Name, "Work Tasks")
+	}
+}
+
+func TestFromEventKitListZeroCount(t *testing.T) {
+	l := &reminders.List{
+		ID:    "list-empty",
+		Title: "Empty List",
+		Count: 0,
+	}
+
+	result := fromEventKitList(l)
+
+	if result.Count != 0 {
+		t.Errorf("Count = %d, want 0", result.Count)
+	}
+}
+
+func TestCreateListEmptyName(t *testing.T) {
+	svc := &ListService{}
+	_, err := svc.CreateList("")
+	if err == nil {
+		t.Error("expected error for empty name, got nil")
 	}
 }

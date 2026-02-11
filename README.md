@@ -34,7 +34,7 @@ make build
 
 ## Requirements
 
-- macOS 10.12+ (uses EventKit for reads and writes via go-eventkit, AppleScript for list CRUD only)
+- macOS 10.12+ (uses EventKit for all reads and writes via go-eventkit, AppleScript only for flagged operations)
 - Go 1.21+ (for building from source)
 - Xcode Command Line Tools (cgo/clang + framework headers)
 - First run will prompt for Reminders app access in System Settings > Privacy & Security
@@ -265,7 +265,7 @@ rem/
 │   ├── main.go
 │   └── commands/         # Cobra command definitions
 ├── internal/
-│   ├── service/          # Service layer wrapping go-eventkit + AppleScript for list CRUD
+│   ├── service/          # Service layer wrapping go-eventkit (AppleScript only for flagged ops)
 │   ├── reminder/         # Domain models (Reminder, List, Priority)
 │   ├── parser/           # Natural language date parsing
 │   ├── export/           # JSON & CSV import/export
@@ -276,9 +276,9 @@ rem/
 └── README.md
 ```
 
-**Reads and writes** go through `go-eventkit` (`github.com/BRO3886/go-eventkit`) — an Objective-C EventKit bridge compiled into the binary via cgo. Direct in-process access to the Reminders store, no IPC. All operations complete in under 200ms.
+**All reads and writes** — including reminder CRUD and list CRUD — go through `go-eventkit` (`github.com/BRO3886/go-eventkit`) — an Objective-C EventKit bridge compiled into the binary via cgo. Direct in-process access to the Reminders store, no IPC. All operations complete in under 200ms.
 
-**List CRUD and flagged** use AppleScript via `osascript` — go-eventkit does not support list create/rename/delete, and EventKit doesn't expose the flagged property.
+**Flagged operations** use AppleScript via `osascript` — EventKit doesn't expose the flagged property. Default list name query also uses AppleScript.
 
 ## Performance
 
@@ -299,8 +299,7 @@ See [Performance docs](https://rem.sidv.dev/docs/performance/) for the full opti
 - **macOS only** — requires EventKit framework and osascript
 - **No tags/subtasks** — not exposed via EventKit
 - **`--flagged` filter is slow** (~3-4s) — EventKit doesn't expose `flagged`, falls back to JXA
-- **List CRUD uses AppleScript** — go-eventkit doesn't support list create/rename/delete
-- **List deletion** may fail on some macOS versions
+- **Immutable lists** cannot be renamed or deleted (system lists like Siri suggestions)
 
 ## License
 

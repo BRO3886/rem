@@ -11,26 +11,39 @@ Write a journal entry for today's work session on the `rem` project.
 
 ```markdown
 # Journal Entry <NNN> - <date> - <short title>
+
 (or ## Session 2/3/etc if appending to existing file)
 
 ## Goal
+
 <What was the objective this session?>
 
 ## What Changed
+
 <Concrete list of what was built/fixed/refactored>
 
 ## Key Insights
+
 <Technical learnings, gotchas discovered, things that failed and why, things that succeeded>
 
 ## Decisions Made
+
 <Any architectural or design decisions and their rationale>
 
 ---
 ```
 
 ## Rules
+
 - Be specific and technical - this is for future Claude sessions, not humans
 - Include code snippets for non-obvious patterns
 - Document what FAILED and why, not just successes
 - Keep it concise but complete - no fluff
 - Always end with `---` separator for future appending
+
+## Post-Journal Housekeeping
+
+After writing the journal entry, also update:
+
+- **`CLAUDE.md`** — Update implementation status, coverage numbers, integration test counts, and any new architecture/patterns added during the session.
+- **Auto memory `MEMORY.md`** — Update project status, coverage numbers, and add any new key patterns or architecture decisions discovered during the session.

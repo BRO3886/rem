@@ -1,5 +1,5 @@
-github.com/BRO3886/go-eventkit v0.1.1 h1:1y0hbBcGj1yxs5Z5oCo471owCeMrOmgc+rSImA8QI7k=
-github.com/BRO3886/go-eventkit v0.1.1/go.mod h1:672VezZhNB1eX7GOph9fGmR7d3rIP0/HrMv7fss4zAk=
+github.com/BRO3886/go-eventkit v0.2.1 h1:DJHLaJpazztoIwF6vQikWifEaWNxXbty9dRo4Tb7tFg=
+github.com/BRO3886/go-eventkit v0.2.1/go.mod h1:672VezZhNB1eX7GOph9fGmR7d3rIP0/HrMv7fss4zAk=
 github.com/clipperhouse/displaywidth v0.6.2 h1:ZDpTkFfpHOKte4RG5O/BOyf3ysnvFswpyYrV7z2uAKo=
 github.com/clipperhouse/displaywidth v0.6.2/go.mod h1:R+kHuzaYWFkTm7xoMmK1lFydbci4X2CicfbGstSGg0o=
 github.com/clipperhouse/stringish v0.1.1 h1:+NSqMOr3GR6k1FdRhhnXrLfztGzuG+VuFDfatpWHKCs=

@@ -20,7 +20,7 @@ Every read command completes in under 200ms. Tested with 224 reminders across 12
 | `rem upcoming` | 0.12s |
 | `rem export --format json` | 0.13s |
 
-Write operations (create, update, delete, complete) now also go through EventKit via go-eventkit, completing in under 200ms. Only list CRUD and flagged operations still use AppleScript (~0.5s).
+All write operations — including reminder CRUD and list CRUD — go through EventKit via go-eventkit, completing in under 200ms. Only flagged operations still use AppleScript (~0.5s).
 
 ## The optimization journey
 
@@ -60,7 +60,11 @@ Replaced the Swift helper with an Objective-C file compiled directly into the Go
 
 ### Stage 5: go-eventkit (fast reads AND writes)
 
-Extracted the EventKit bridge into a standalone library (`github.com/BRO3886/go-eventkit`) and extended it to support writes (create, update, delete, complete/uncomplete) — all through EventKit. This eliminated AppleScript for reminder operations entirely, bringing write times from ~0.5s to under 200ms. AppleScript is now only used for list CRUD and flagged operations.
+Extracted the EventKit bridge into a standalone library (`github.com/BRO3886/go-eventkit`) and extended it to support writes (create, update, delete, complete/uncomplete) — all through EventKit. This eliminated AppleScript for reminder operations entirely, bringing write times from ~0.5s to under 200ms.
+
+### Stage 6: go-eventkit list CRUD (full EventKit coverage)
+
+go-eventkit v0.2.1 added list CRUD support (create, rename/recolor, delete). rem now uses EventKit for all list operations too, eliminating the last AppleScript dependency for CRUD. AppleScript is now only used for flagged operations (EventKit limitation) and default list name queries.
 
 ## Before vs after
 
@@ -97,7 +101,7 @@ JXA/AppleScript, by contrast, sends Apple Events to the Reminders.app process. E
 
 ## Writes are now fast too
 
-Since the migration to go-eventkit, all reminder write operations (create, update, delete, complete/uncomplete) go through EventKit and complete in under 200ms — the same speed as reads. Only list CRUD and flagged operations still use AppleScript (~0.5s).
+Since the migration to go-eventkit, all write operations — including reminder CRUD and list CRUD — go through EventKit and complete in under 200ms. Only flagged operations still use AppleScript (~0.5s).
 
 ## Known slow path
 

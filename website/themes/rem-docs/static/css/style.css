@@ -322,6 +322,18 @@ code {
   margin: 0 auto 2rem;
 }
 
+.hero-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.hero-link:hover {
+  border-bottom-color: var(--accent);
+}
+
 .hero-actions {
   display: flex;
   gap: 0.875rem;

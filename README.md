@@ -1,6 +1,6 @@
 # rem
 
-A blazing fast CLI for macOS Reminders. Sub-200ms reads AND writes via EventKit, natural language dates, import/export, and a public Go API — all in a single binary.
+A blazing fast CLI for macOS Reminders. Sub-200ms reads AND writes via EventKit, natural language dates, and import/export — all in a single binary.
 
 **[Documentation](https://rem.sidv.dev)** | **[Architecture](https://rem.sidv.dev/docs/architecture/)** | **[go-eventkit](https://github.com/BRO3886/go-eventkit)**
 

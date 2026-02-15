@@ -34,9 +34,15 @@ Go CLI wrapping macOS Reminders. Uses `go-eventkit` (cgo + Objective-C EventKit)
 ## Build & Test
 ```bash
 make build        # -> bin/rem (single binary, includes EventKit via cgo)
+make release      # -> bin/rem-darwin-arm64.tar.gz (for GitHub Releases upload)
 go test ./...     # unit tests (date parser, export, models)
 make completions  # bash/zsh/fish
 ```
+
+## Releasing
+- **Always use `make release`** to build release binaries — produces a `.tar.gz` that preserves execute permissions (HTTP downloads strip +x from raw binaries)
+- Upload `bin/rem-darwin-arm64.tar.gz` to GitHub Releases
+- No CI release workflow — macOS runners are too expensive for free tier
 
 ## Conventions
 - Short IDs displayed as first 8 chars of full `x-apple-reminder://UUID` ID

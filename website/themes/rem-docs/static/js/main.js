@@ -71,6 +71,28 @@
   });
 })();
 
+// Install tabs
+(function () {
+  var tabs = document.querySelectorAll('.install-tab');
+  var panels = document.querySelectorAll('.install-panel');
+  if (!tabs.length) return;
+
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      var target = this.getAttribute('data-tab');
+      tabs.forEach(function (t) {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+      });
+      panels.forEach(function (p) { p.classList.remove('active'); });
+      this.classList.add('active');
+      this.setAttribute('aria-selected', 'true');
+      var panel = document.querySelector('[data-panel="' + target + '"]');
+      if (panel) panel.classList.add('active');
+    });
+  });
+})();
+
 // Terminal typing animation
 (function () {
   var cmdEl = document.getElementById('typed-cmd');

@@ -94,23 +94,59 @@
   <div class="install-inner">
     <h2 class="section-title scroll-reveal">Install in seconds</h2>
     <div class="install-card scroll-reveal">
-      <div class="install-step">
-        <span class="install-label">via go install</span>
-        <div class="code-block">
-          <code>go install github.com/BRO3886/rem/cmd/rem@latest</code>
-          <button class="copy-btn" data-copy="go install github.com/BRO3886/rem/cmd/rem@latest" aria-label="Copy">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-          </button>
+      <div class="install-tabs" role="tablist">
+        <button class="install-tab active" role="tab" aria-selected="true" data-tab="script">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          Script
+        </button>
+        <button class="install-tab" role="tab" aria-selected="false" data-tab="go">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg>
+          Go Install
+        </button>
+        <button class="install-tab" role="tab" aria-selected="false" data-tab="manual">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </button>
+      </div>
+
+      <div class="install-panel active" data-panel="script">
+        <div class="install-step">
+          <span class="install-label">recommended</span>
+          <div class="code-block">
+            <code>curl -fsSL https://rem.sidv.dev/install | bash</code>
+            <button class="copy-btn" data-copy="curl -fsSL https://rem.sidv.dev/install | bash" aria-label="Copy">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+          </div>
+          <span class="install-note">Downloads the latest release binary and installs to /usr/local/bin.</span>
         </div>
       </div>
-      <div class="install-divider"><span>or</span></div>
-      <div class="install-step">
-        <span class="install-label">from source</span>
-        <div class="code-block">
-          <code>git clone https://github.com/BRO3886/rem.git && cd rem && make build</code>
-          <button class="copy-btn" data-copy="git clone https://github.com/BRO3886/rem.git && cd rem && make build" aria-label="Copy">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-          </button>
+
+      <div class="install-panel" data-panel="go">
+        <div class="install-step">
+          <span class="install-label">requires go &amp; xcode command line tools</span>
+          <div class="code-block">
+            <code>go install github.com/BRO3886/rem/cmd/rem@latest</code>
+            <button class="copy-btn" data-copy="go install github.com/BRO3886/rem/cmd/rem@latest" aria-label="Copy">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+          </div>
+          <span class="install-note">Compiles from source via cgo. Needs Xcode CLT for EventKit framework headers.</span>
+        </div>
+      </div>
+
+      <div class="install-panel" data-panel="manual">
+        <div class="install-step">
+          <span class="install-label">from github releases</span>
+          <div class="code-block code-block-multi">
+            <code>curl -LO https://github.com/BRO3886/rem/releases/latest/download/rem-darwin-arm64
+chmod +x rem-darwin-arm64
+sudo mv rem-darwin-arm64 /usr/local/bin/rem</code>
+            <button class="copy-btn" data-copy="curl -LO https://github.com/BRO3886/rem/releases/latest/download/rem-darwin-arm64 && chmod +x rem-darwin-arm64 && sudo mv rem-darwin-arm64 /usr/local/bin/rem" aria-label="Copy">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+          </div>
+          <span class="install-note">Replace <code>arm64</code> with <code>amd64</code> for Intel Macs.</span>
         </div>
       </div>
     </div>

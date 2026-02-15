@@ -26,12 +26,16 @@ lint: ## Run linter
 fmt: ## Format code
 	go fmt ./...
 
-release: ## Build release tarball for GitHub upload
+release: ## Build release tarballs for GitHub upload (arm64 + amd64)
 	@mkdir -p bin
-	GOARCH=arm64 go build $(LDFLAGS) -o bin/rem ./cmd/rem/
-	chmod +x bin/rem
-	tar -czf bin/rem-darwin-arm64.tar.gz -C bin rem
-	@echo "Upload bin/rem-darwin-arm64.tar.gz to GitHub Releases"
+	@for arch in arm64 amd64; do \
+		echo "Building rem-darwin-$$arch..."; \
+		CGO_ENABLED=1 GOARCH=$$arch go build $(LDFLAGS) -o bin/rem ./cmd/rem/; \
+		chmod +x bin/rem; \
+		tar -czf bin/rem-darwin-$$arch.tar.gz -C bin rem; \
+		rm bin/rem; \
+	done
+	@echo "Upload bin/rem-darwin-{arm64,amd64}.tar.gz to GitHub Releases"
 
 clean: ## Remove built binaries
 	rm -rf bin/

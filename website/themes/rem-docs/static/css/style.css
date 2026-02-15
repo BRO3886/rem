@@ -688,6 +688,10 @@ code {
   font-size: 0.85em;
 }
 
+.code-block-multi {
+  overflow-x: auto;
+}
+
 .code-block-multi code {
   white-space: pre;
   line-height: 1.65;

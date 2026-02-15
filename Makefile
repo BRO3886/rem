@@ -3,7 +3,7 @@ VERSION?=$(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 BUILD_TIME=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 LDFLAGS=-ldflags "-X main.version=$(VERSION) -X main.buildTime=$(BUILD_TIME)"
 
-.PHONY: all build install test clean lint fmt help completions
+.PHONY: all build install test clean lint fmt help completions release
 
 all: build
 
@@ -25,6 +25,13 @@ lint: ## Run linter
 
 fmt: ## Format code
 	go fmt ./...
+
+release: ## Build release tarball for GitHub upload
+	@mkdir -p bin
+	GOARCH=arm64 go build $(LDFLAGS) -o bin/rem ./cmd/rem/
+	chmod +x bin/rem
+	tar -czf bin/rem-darwin-arm64.tar.gz -C bin rem
+	@echo "Upload bin/rem-darwin-arm64.tar.gz to GitHub Releases"
 
 clean: ## Remove built binaries
 	rm -rf bin/

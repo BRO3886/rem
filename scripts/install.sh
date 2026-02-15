@@ -41,22 +41,22 @@ fi
 
 info "Latest version: $LATEST"
 
-# --- Download binary ---
+# --- Download and extract ---
 
-ASSET_NAME="rem-darwin-${ARCH}"
+ASSET_NAME="rem-darwin-${ARCH}.tar.gz"
 DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${LATEST}/${ASSET_NAME}"
 
 TMPDIR_PATH=$(mktemp -d)
 trap 'rm -rf "$TMPDIR_PATH"' EXIT
 
 info "Downloading ${ASSET_NAME}..."
-HTTP_CODE=$(curl -sSL -w "%{http_code}" -o "${TMPDIR_PATH}/${BINARY_NAME}" "$DOWNLOAD_URL")
+HTTP_CODE=$(curl -sSL -w "%{http_code}" -o "${TMPDIR_PATH}/${ASSET_NAME}" "$DOWNLOAD_URL")
 
 if [ "$HTTP_CODE" != "200" ]; then
     error "Download failed (HTTP $HTTP_CODE). Asset '${ASSET_NAME}' may not exist for ${LATEST}."
 fi
 
-chmod +x "${TMPDIR_PATH}/${BINARY_NAME}"
+tar -xzf "${TMPDIR_PATH}/${ASSET_NAME}" -C "${TMPDIR_PATH}"
 
 # --- Install ---
 

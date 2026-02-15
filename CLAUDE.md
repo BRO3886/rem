@@ -44,5 +44,11 @@ make completions  # bash/zsh/fish
 - All commands support `-o json|table|plain`
 - `NO_COLOR` env var respected
 
+## Website & Hosting
+- Documentation site: `rem.sidv.dev` (Hugo on Cloudflare Pages)
+- Source: `website/` dir, deployed via `.github/workflows/deploy.yml`
+- Install script served at `rem.sidv.dev/install` (from `website/static/install`)
+- Domain: `sidv.dev` (owned by user, managed on Cloudflare)
+
 ## Journal
 Engineering journals live in `journals/` dir. See `.claude/commands/journal.md` for the journaling command.

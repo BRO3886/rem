@@ -17,13 +17,39 @@ A blazing fast CLI for macOS Reminders. Sub-200ms reads AND writes via EventKit,
 
 ## Installation
 
-### From source
+### Quick install (recommended)
+
+```bash
+curl -fsSL https://rem.sidv.dev/install | bash
+```
+
+Downloads the latest release, extracts, and installs to `/usr/local/bin`.
+
+### Via Go
 
 ```bash
 go install github.com/BRO3886/rem/cmd/rem@latest
 ```
 
-### Build locally
+Requires Go 1.21+ and Xcode Command Line Tools (cgo compiles EventKit bindings).
+
+### Manual download
+
+Download from [GitHub Releases](https://github.com/BRO3886/rem/releases):
+
+```bash
+# Apple Silicon
+curl -LO https://github.com/BRO3886/rem/releases/latest/download/rem-darwin-arm64.tar.gz
+tar xzf rem-darwin-arm64.tar.gz
+sudo mv rem /usr/local/bin/rem
+
+# Intel
+curl -LO https://github.com/BRO3886/rem/releases/latest/download/rem-darwin-amd64.tar.gz
+tar xzf rem-darwin-amd64.tar.gz
+sudo mv rem /usr/local/bin/rem
+```
+
+### Build from source
 
 ```bash
 git clone https://github.com/BRO3886/rem.git
@@ -35,8 +61,7 @@ make build
 ## Requirements
 
 - macOS 10.12+ (uses EventKit for all reads and writes via go-eventkit, AppleScript only for flagged operations)
-- Go 1.21+ (for building from source)
-- Xcode Command Line Tools (cgo/clang + framework headers)
+- Xcode Command Line Tools (for building from source — cgo/clang + framework headers)
 - First run will prompt for Reminders app access in System Settings > Privacy & Security
 
 ## Quick Start

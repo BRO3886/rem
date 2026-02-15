@@ -2,7 +2,7 @@
 
 A blazing fast CLI for macOS Reminders. Sub-200ms reads AND writes via EventKit, natural language dates, import/export, and a public Go API — all in a single binary.
 
-**[Documentation](https://rem.sidv.dev)** | **[Architecture](https://rem.sidv.dev/docs/architecture/)** | **[Go API](https://rem.sidv.dev/docs/api/)**
+**[Documentation](https://rem.sidv.dev)** | **[Architecture](https://rem.sidv.dev/docs/architecture/)** | **[go-eventkit](https://github.com/BRO3886/go-eventkit)**
 
 ## Features
 
@@ -12,7 +12,7 @@ A blazing fast CLI for macOS Reminders. Sub-200ms reads AND writes via EventKit,
 - **19 commands** — full CRUD, search, stats, overdue, upcoming, interactive mode
 - **Multiple output formats** — table, JSON, plain text
 - **Import/Export** — JSON and CSV with full property round-trip
-- **Public Go API** — powered by [go-eventkit](https://github.com/BRO3886/go-eventkit) for programmatic access
+- **Powered by [go-eventkit](https://github.com/BRO3886/go-eventkit)** — use the same library directly for programmatic Go access
 - **Shell completions** — bash, zsh, fish
 
 ## Installation
@@ -223,9 +223,9 @@ rem supports natural language dates:
 | `2026-02-15` | February 15, 2026 |
 | `2026-02-15 14:30` | February 15, 2026 at 2:30 PM |
 
-## Public Go API
+## Go API
 
-For programmatic access to macOS Reminders, use [**go-eventkit**](https://github.com/BRO3886/go-eventkit) directly — the same library that powers rem and [cal](https://github.com/BRO3886/cal):
+rem is powered by [**go-eventkit**](https://github.com/BRO3886/go-eventkit) — use it directly for programmatic access to macOS Reminders in your own Go programs:
 
 ```bash
 go get github.com/BRO3886/go-eventkit

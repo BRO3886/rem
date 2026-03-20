@@ -3,7 +3,7 @@ package commands
 import (
 	"fmt"
 
-	"github.com/BRO3886/rem/internal/parser"
+	"github.com/BRO3886/go-eventkit/dateparser"
 	"github.com/BRO3886/rem/internal/reminder"
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
@@ -77,7 +77,7 @@ var updateCmd = &cobra.Command{
 			if updateDue == "" || updateDue == "none" {
 				updates["due_date"] = nil
 			} else {
-				t, err := parser.ParseDate(updateDue)
+				t, err := dateparser.ParseDate(updateDue, dateparser.WithDefaultHour(9), dateparser.WithSmartTimeRollover(), dateparser.WithEOWSkipToday())
 				if err != nil {
 					return fmt.Errorf("invalid due date: %w", err)
 				}
@@ -285,7 +285,7 @@ func runUpdateInteractive(idArg string) error {
 		if dueStr == "" || dueStr == "none" {
 			updates["due_date"] = nil
 		} else {
-			t, err := parser.ParseDate(dueStr)
+			t, err := dateparser.ParseDate(dueStr, dateparser.WithDefaultHour(9), dateparser.WithSmartTimeRollover(), dateparser.WithEOWSkipToday())
 			if err != nil {
 				return fmt.Errorf("invalid due date: %w", err)
 			}

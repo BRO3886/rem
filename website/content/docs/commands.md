@@ -312,15 +312,16 @@ rem skills status
 
 ## Date Formats
 
-rem's built-in parser understands these patterns:
+Date parsing is powered by [`go-eventkit/dateparser`](https://github.com/BRO3886/go-eventkit). Supported patterns:
 
 | Pattern | Example |
 |---------|---------|
-| Relative | `in 2 days`, `in 3 hours`, `in 30 minutes` |
-| Named | `today`, `tomorrow`, `yesterday` |
-| Day of week | `next monday`, `next friday` |
-| Special | `eod` (5pm today), `eow` (Friday 5pm), `next week`, `next month` |
-| Compound | `next friday at 2pm`, `tomorrow at 3:30pm` |
+| Relative | `in 2 days`, `in 3 hours`, `in 30 minutes`, `5 days ago` |
+| Named | `now`, `today`, `tomorrow`, `yesterday` |
+| Day of week | `monday`, `next monday`, `next friday` |
+| Special | `eod` (5pm today), `eow` (Friday 5pm), `this week`, `next week` (next Monday), `next month` (1st of next month) |
+| Compound | `next friday at 2pm`, `tomorrow at 3:30pm`, `today 5pm`, `monday 2pm` |
+| Month-day | `mar 15`, `21 march`, `december 31 11:59pm` |
 | Time only | `5pm`, `17:00`, `3:30pm` |
 | ISO 8601 | `2026-02-15`, `2026-02-15T14:30:00` |
 | US format | `02/15/2026`, `2/15` |

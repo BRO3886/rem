@@ -10,7 +10,6 @@ Go CLI wrapping macOS Reminders. Uses `go-eventkit` (cgo + Objective-C EventKit)
 - `cmd/rem/commands/` - Cobra CLI commands (one file per command); `huh_helpers.go` has shared interactive utilities
 - `internal/service/` - Service layer: `reminders.go` and `lists.go` wrap `go-eventkit` client. `executor.go` runs `osascript` for flagged operations and default list name query only.
 - `internal/reminder/` - Domain models: `Reminder`, `List`, `Priority`
-- `internal/parser/` - Custom NL date parser (no external deps)
 - `internal/export/` - JSON/CSV import/export
 - `internal/skills/` - Agent skill install/uninstall/status logic
 - `internal/update/` - Background update check (GitHub releases, 24h cache)
@@ -28,7 +27,7 @@ Go CLI wrapping macOS Reminders. Uses `go-eventkit` (cgo + Objective-C EventKit)
 - `due date` and `remind me date` are independent
 
 ## Libraries
-- `BRO3886/go-eventkit` - **EventKit bindings** (cgo + ObjC, reads AND writes)
+- `BRO3886/go-eventkit` - **EventKit bindings** (cgo + ObjC, reads AND writes) + `dateparser` package for NL date parsing
 - `spf13/cobra` - CLI framework
 - `olekukonko/tablewriter` v1.x - **new API**: `NewTable()`, `.Header()`, `.Append()`, `.Render()` (NOT the old `SetHeader`/`SetBorder` API)
 - `fatih/color` - terminal colors

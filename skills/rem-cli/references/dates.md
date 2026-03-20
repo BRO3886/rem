@@ -1,22 +1,24 @@
 # Natural Language Date Reference
 
-The `--due` flag on `rem add` and `rem update` accepts natural language dates. All parsing is built-in with no external dependencies.
+The `--due` flag on `rem add` and `rem update` accepts natural language dates. Powered by [`go-eventkit/dateparser`](https://github.com/BRO3886/go-eventkit).
 
 ## Keywords
 
 | Input | Resolves to |
 |-------|-------------|
+| `now` | Current date and time |
 | `today` | Today at 9:00 AM |
 | `tomorrow` | Tomorrow at 9:00 AM |
 | `yesterday` | Yesterday at 9:00 AM |
-| `next week` | 7 days from now at 9:00 AM |
-| `next month` | 30 days from now at 9:00 AM |
+| `next week` | Next Monday at 9:00 AM |
+| `next month` | 1st of next month at 9:00 AM |
+| `this week` | End of current week (Sunday 11:59 PM) |
 | `eod` / `end of day` | Today at 5:00 PM |
-| `eow` / `end of week` | Next Friday at 5:00 PM |
+| `eow` / `end of week` | Next Friday at 5:00 PM (skips today if already Friday) |
 
 ## Relative Time
 
-Pattern: `in <number> <unit>`
+Pattern: `in <number> <unit>` or `<number> <unit> ago`
 
 | Input | Example result |
 |-------|---------------|
@@ -25,13 +27,18 @@ Pattern: `in <number> <unit>`
 | `in 2 days` | 2 days from now |
 | `in 1 week` | 7 days from now |
 | `in 2 months` | 2 months from now |
+| `5 days ago` | 5 days before now |
+| `2 hours ago` | 2 hours before now |
 
 ## Weekday Patterns
 
 | Input | Resolves to |
 |-------|-------------|
+| `monday` | Next Monday at 9:00 AM |
+| `friday` | Next Friday at 9:00 AM |
 | `next monday` | Next Monday at 9:00 AM |
 | `next friday` | Next Friday at 9:00 AM |
+| `monday 2pm` | Next Monday at 2:00 PM |
 | `next monday at 2pm` | Next Monday at 2:00 PM |
 | `next fri at 3:30pm` | Next Friday at 3:30 PM |
 
@@ -41,9 +48,19 @@ Supports full names and 3-letter abbreviations: `sun`, `mon`, `tue`, `wed`, `thu
 
 | Input | Resolves to |
 |-------|-------------|
+| `today 5pm` | Today at 5:00 PM |
 | `today at 5pm` | Today at 5:00 PM |
+| `tomorrow 3:30pm` | Tomorrow at 3:30 PM |
 | `tomorrow at 3:30pm` | Tomorrow at 3:30 PM |
 | `yesterday at 9am` | Yesterday at 9:00 AM |
+
+## Month-Day Patterns
+
+| Input | Resolves to |
+|-------|-------------|
+| `mar 15` | March 15 at 9:00 AM |
+| `21 march` | March 21 at 9:00 AM |
+| `december 31 11:59pm` | December 31 at 11:59 PM |
 
 ## Time Only
 

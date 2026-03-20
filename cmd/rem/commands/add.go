@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/BRO3886/rem/internal/parser"
+	"github.com/BRO3886/go-eventkit/dateparser"
 	"github.com/BRO3886/rem/internal/reminder"
 	"github.com/BRO3886/rem/internal/ui"
 	"github.com/spf13/cobra"
@@ -49,7 +49,7 @@ var addCmd = &cobra.Command{
 		}
 
 		if addDue != "" {
-			dueDate, err := parser.ParseDate(addDue)
+			dueDate, err := dateparser.ParseDate(addDue, dateparser.WithDefaultHour(9), dateparser.WithSmartTimeRollover(), dateparser.WithEOWSkipToday())
 			if err != nil {
 				return fmt.Errorf("invalid due date: %w", err)
 			}

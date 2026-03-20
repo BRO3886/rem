@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/BRO3886/go-eventkit/dateparser"
 	"github.com/BRO3886/rem/internal/reminder"
 	"github.com/BRO3886/rem/internal/ui"
 	"github.com/charmbracelet/huh"
@@ -177,7 +176,7 @@ func runAddInteractive() error {
 	}
 
 	if dueStr != "" {
-		dueDate, err := dateparser.ParseDate(dueStr, dateparser.WithDefaultHour(9), dateparser.WithSmartTimeRollover(), dateparser.WithEOWSkipToday())
+		dueDate, err := parseDate(dueStr)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: could not parse due date '%s': %v\n", dueStr, err)
 		} else {

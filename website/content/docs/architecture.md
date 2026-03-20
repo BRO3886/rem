@@ -125,9 +125,6 @@ internal/
 ├── reminder/              # Domain models
 │   └── model.go           # Reminder, List, Priority types
 │
-├── parser/                # Natural language date parser
-│   └── date.go            # 20+ patterns, no external deps
-│
 ├── export/                # Import/export
 │   ├── json.go            # JSON format
 │   └── csv.go             # CSV format
@@ -163,9 +160,9 @@ The EventKit bridge was extracted from rem into a standalone Go library (`github
 - **Separation of concerns** — rem is a thin CLI wrapper, go-eventkit handles all cgo/EventKit complexity
 - **Calendar support** — go-eventkit also supports Calendar/Events, which rem doesn't use
 
-### Custom date parser
+### Date parsing via go-eventkit
 
-Instead of using an external NL date library, rem includes a custom parser in `internal/parser/`. It handles 20+ patterns in ~250 lines of Go with deterministic behavior and no locale surprises.
+Date parsing uses the shared `dateparser` package from `go-eventkit`. This provides 30+ patterns including `now`, `this week`, backward-relative (`5 days ago`), bare weekdays (`monday 2pm`), and month-day patterns (`mar 15`). Configured with `WithDefaultHour(9)` so bare dates resolve to 9 AM, and `WithSmartTimeRollover()` so past times like `5pm` roll to tomorrow.
 
 ### Prefix-matched IDs
 

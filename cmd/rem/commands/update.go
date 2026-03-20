@@ -3,7 +3,6 @@ package commands
 import (
 	"fmt"
 
-	"github.com/BRO3886/rem/internal/parser"
 	"github.com/BRO3886/rem/internal/reminder"
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
@@ -77,7 +76,7 @@ var updateCmd = &cobra.Command{
 			if updateDue == "" || updateDue == "none" {
 				updates["due_date"] = nil
 			} else {
-				t, err := parser.ParseDate(updateDue)
+				t, err := parseDate(updateDue)
 				if err != nil {
 					return fmt.Errorf("invalid due date: %w", err)
 				}
@@ -285,7 +284,7 @@ func runUpdateInteractive(idArg string) error {
 		if dueStr == "" || dueStr == "none" {
 			updates["due_date"] = nil
 		} else {
-			t, err := parser.ParseDate(dueStr)
+			t, err := parseDate(dueStr)
 			if err != nil {
 				return fmt.Errorf("invalid due date: %w", err)
 			}

@@ -82,7 +82,6 @@ Stack:
 - cmd/rem/commands/ — Cobra CLI commands
 - internal/service/ — Service layer wrapping go-eventkit
 - internal/reminder/ — Domain models (Reminder, List, Priority)
-- internal/parser/ — Custom natural language date parser (no external deps)
 - internal/export/ — JSON/CSV import/export
 - internal/skills/ — Agent skill install/uninstall/status
 - internal/update/ — Background update check (GitHub releases, 24h cache)

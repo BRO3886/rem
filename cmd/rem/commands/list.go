@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/BRO3886/rem/internal/parser"
 	"github.com/BRO3886/rem/internal/reminder"
 	"github.com/BRO3886/rem/internal/ui"
 	"github.com/spf13/cobra"
@@ -48,14 +47,14 @@ var listCmd = &cobra.Command{
 			filter.Flagged = &v
 		}
 		if listDueBefore != "" {
-			t, err := parser.ParseDate(listDueBefore)
+			t, err := parseDate(listDueBefore)
 			if err != nil {
 				return fmt.Errorf("invalid --due-before date: %w", err)
 			}
 			filter.DueBefore = &t
 		}
 		if listDueAfter != "" {
-			t, err := parser.ParseDate(listDueAfter)
+			t, err := parseDate(listDueAfter)
 			if err != nil {
 				return fmt.Errorf("invalid --due-after date: %w", err)
 			}

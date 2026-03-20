@@ -1,6 +1,21 @@
 package commands
 
-import "github.com/BRO3886/rem/internal/reminder"
+import (
+	"time"
+
+	"github.com/BRO3886/go-eventkit/dateparser"
+	"github.com/BRO3886/rem/internal/reminder"
+)
+
+// parseDate wraps dateparser.ParseDate with rem's default options:
+// bare dates at 9am, past times roll to tomorrow, eow skips today.
+func parseDate(input string) (time.Time, error) {
+	return dateparser.ParseDate(input,
+		dateparser.WithDefaultHour(9),
+		dateparser.WithSmartTimeRollover(),
+		dateparser.WithEOWSkipToday(),
+	)
+}
 
 // completeFilter builds the filter for the complete/uncomplete interactive flow.
 // When uncomplete is false (completing), it shows incomplete reminders (Completed=false).

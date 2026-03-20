@@ -215,21 +215,26 @@ rem completion fish > ~/.config/fish/completions/rem.fish
 
 ## Date Parsing
 
-rem supports natural language dates:
+Date parsing is powered by [`go-eventkit/dateparser`](https://github.com/BRO3886/go-eventkit):
 
 | Input | Meaning |
 |-------|---------|
+| `now` | Current date and time |
 | `today` | Today at 9:00 AM |
 | `tomorrow` | Tomorrow at 9:00 AM |
 | `next monday` | Next Monday at 9:00 AM |
+| `monday 2pm` | Next Monday at 2:00 PM |
 | `next friday at 2pm` | Next Friday at 2:00 PM |
 | `in 2 days` | 2 days from now |
 | `in 3 hours` | 3 hours from now |
-| `in 30 minutes` | 30 minutes from now |
+| `5 days ago` | 5 days before now |
 | `eod` / `end of day` | Today at 5:00 PM |
-| `next week` | 7 days from now |
-| `next month` | 1 month from now |
+| `this week` | End of current week |
+| `next week` | Next Monday at 9:00 AM |
+| `next month` | 1st of next month at 9:00 AM |
+| `mar 15` | March 15 at 9:00 AM |
 | `5pm` | Today (or tomorrow) at 5:00 PM |
+| `today 5pm` | Today at 5:00 PM |
 | `2026-02-15` | February 15, 2026 |
 | `2026-02-15 14:30` | February 15, 2026 at 2:30 PM |
 
@@ -302,7 +307,6 @@ rem/
 ├── internal/
 │   ├── service/          # Service layer wrapping go-eventkit (AppleScript only for flagged ops)
 │   ├── reminder/         # Domain models (Reminder, List, Priority)
-│   ├── parser/           # Natural language date parsing
 │   ├── export/           # JSON & CSV import/export
 │   ├── skills/           # Agent skill install/uninstall/status
 │   ├── update/           # Background update check (GitHub releases)

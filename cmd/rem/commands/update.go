@@ -16,6 +16,7 @@ var (
 	updateURL         string
 	updateFlagged     string
 	updateList        string
+	updateRemindMe    string
 	updateInteractive bool
 )
 
@@ -28,6 +29,7 @@ var updateCmd = &cobra.Command{
   rem update abc12345 --notes "Updated notes" --priority medium
   rem edit abc12345 --name "New title"
   rem update abc12345 --list "Work"
+  rem update abc12345 --remind-me 15m
   rem update -i
   rem update -i abc12345`,
 	Args: func(cmd *cobra.Command, args []string) error {
@@ -92,6 +94,17 @@ var updateCmd = &cobra.Command{
 		if cmd.Flags().Changed("list") {
 			updates["list"] = updateList
 		}
+		if cmd.Flags().Changed("remind-me") {
+			if updateRemindMe == "" || updateRemindMe == "none" {
+				updates["alarms"] = nil
+			} else {
+				alarm, err := parseAlarm(updateRemindMe)
+				if err != nil {
+					return err
+				}
+				updates["alarms"] = []reminder.Alarm{alarm}
+			}
+		}
 
 		if len(updates) == 0 {
 			return fmt.Errorf("no updates specified")
@@ -115,6 +128,7 @@ func init() {
 	updateCmd.Flags().StringVarP(&updateURL, "url", "u", "", "New URL")
 	updateCmd.Flags().StringVar(&updateFlagged, "flagged", "", "Set flagged status: true/false")
 	updateCmd.Flags().StringVarP(&updateList, "list", "l", "", "Move reminder to a different list")
+	updateCmd.Flags().StringVar(&updateRemindMe, "remind-me", "", "Set alarm: duration before due (15m, 1h, 2d), 'none' to clear")
 	updateCmd.Flags().BoolVarP(&updateInteractive, "interactive", "i", false, "Update interactively")
 
 	rootCmd.AddCommand(updateCmd)

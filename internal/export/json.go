@@ -9,22 +9,40 @@ import (
 	"github.com/BRO3886/rem/internal/reminder"
 )
 
+// JSONAlarm is the JSON-serializable representation of an alarm.
+type JSONAlarm struct {
+	AbsoluteDate   *string `json:"absolute_date,omitempty"`
+	RelativeOffset string  `json:"relative_offset,omitempty"` // e.g., "-15m0s"
+	Description    string  `json:"description"`               // human-readable
+}
+
+// JSONRecurrenceRule is the JSON-serializable representation of a recurrence rule.
+type JSONRecurrenceRule struct {
+	Description string   `json:"description"` // human-readable
+	Frequency   string   `json:"frequency"`   // daily, weekly, monthly, yearly
+	Interval    int      `json:"interval"`
+	DaysOfWeek  []string `json:"days_of_week,omitempty"`
+}
+
 // JSONReminder is the JSON-serializable representation of a reminder.
 type JSONReminder struct {
-	ID               string  `json:"id"`
-	Name             string  `json:"name"`
-	Body             string  `json:"body,omitempty"`
-	ListName         string  `json:"list_name"`
-	DueDate          *string `json:"due_date,omitempty"`
-	RemindMeDate     *string `json:"remind_me_date,omitempty"`
-	CompletionDate   *string `json:"completion_date,omitempty"`
-	CreationDate     *string `json:"creation_date,omitempty"`
-	ModificationDate *string `json:"modification_date,omitempty"`
-	Priority         int     `json:"priority"`
-	PriorityLabel    string  `json:"priority_label"`
-	Flagged          bool    `json:"flagged"`
-	Completed        bool    `json:"completed"`
-	URL              string  `json:"url,omitempty"`
+	ID               string               `json:"id"`
+	Name             string               `json:"name"`
+	Body             string               `json:"body,omitempty"`
+	ListName         string               `json:"list_name"`
+	DueDate          *string              `json:"due_date,omitempty"`
+	RemindMeDate     *string              `json:"remind_me_date,omitempty"`
+	CompletionDate   *string              `json:"completion_date,omitempty"`
+	CreationDate     *string              `json:"creation_date,omitempty"`
+	ModificationDate *string              `json:"modification_date,omitempty"`
+	Priority         int                  `json:"priority"`
+	PriorityLabel    string               `json:"priority_label"`
+	Flagged          bool                 `json:"flagged"`
+	Completed        bool                 `json:"completed"`
+	URL              string               `json:"url,omitempty"`
+	Recurring        bool                 `json:"recurring,omitempty"`
+	RecurrenceRules  []JSONRecurrenceRule `json:"recurrence_rules,omitempty"`
+	Alarms           []JSONAlarm          `json:"alarms,omitempty"`
 }
 
 const timeFormat = "2006-01-02T15:04:05"
@@ -37,9 +55,24 @@ func formatTimePtr(t *time.Time) *string {
 	return &s
 }
 
+func frequencyString(f reminder.RecurrenceFrequency) string {
+	switch f {
+	case reminder.FrequencyDaily:
+		return "daily"
+	case reminder.FrequencyWeekly:
+		return "weekly"
+	case reminder.FrequencyMonthly:
+		return "monthly"
+	case reminder.FrequencyYearly:
+		return "yearly"
+	default:
+		return "unknown"
+	}
+}
+
 // ToJSON converts a reminder to its JSON representation.
 func ToJSON(r *reminder.Reminder) JSONReminder {
-	return JSONReminder{
+	jr := JSONReminder{
 		ID:               r.ID,
 		Name:             r.Name,
 		Body:             r.Body,
@@ -54,7 +87,31 @@ func ToJSON(r *reminder.Reminder) JSONReminder {
 		Flagged:          r.Flagged,
 		Completed:        r.Completed,
 		URL:              r.URL,
+		Recurring:        r.Recurring,
 	}
+
+	for _, rule := range r.RecurrenceRules {
+		jr.RecurrenceRules = append(jr.RecurrenceRules, JSONRecurrenceRule{
+			Description: rule.String(),
+			Frequency:   frequencyString(rule.Frequency),
+			Interval:    rule.Interval,
+			DaysOfWeek:  rule.DaysOfWeek,
+		})
+	}
+
+	for _, a := range r.Alarms {
+		ja := JSONAlarm{
+			Description: a.String(),
+		}
+		if a.AbsoluteDate != nil {
+			ja.AbsoluteDate = formatTimePtr(a.AbsoluteDate)
+		} else {
+			ja.RelativeOffset = a.RelativeOffset.String()
+		}
+		jr.Alarms = append(jr.Alarms, ja)
+	}
+
+	return jr
 }
 
 // ExportJSON writes reminders as JSON to the writer.

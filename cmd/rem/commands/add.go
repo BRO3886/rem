@@ -11,12 +11,13 @@ import (
 )
 
 var (
-	addList     string
-	addDue      string
-	addPriority string
-	addNotes    string
-	addURL      string
-	addFlagged  bool
+	addList       string
+	addDue        string
+	addPriority   string
+	addNotes      string
+	addURL        string
+	addFlagged    bool
+	addRemindMe   string
 	addInteractive bool
 )
 
@@ -28,6 +29,7 @@ var addCmd = &cobra.Command{
 	Example: `  rem add "Buy groceries" --list Personal --due tomorrow --priority high
   rem add "Review PR" --due "next friday at 2pm" --url https://github.com/org/repo/pull/123
   rem add "Call dentist" --due "in 2 days" --notes "Ask about cleaning"
+  rem add "Meeting" --due "tomorrow at 10am" --remind-me 15m
   rem add -i  # Interactive mode`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if addInteractive {
@@ -55,6 +57,14 @@ var addCmd = &cobra.Command{
 			r.DueDate = &dueDate
 		}
 
+		if addRemindMe != "" {
+			alarm, err := parseAlarm(addRemindMe)
+			if err != nil {
+				return err
+			}
+			r.Alarms = []reminder.Alarm{alarm}
+		}
+
 		id, err := reminderSvc.CreateReminder(r)
 		if err != nil {
 			return err
@@ -78,6 +88,7 @@ func init() {
 	addCmd.Flags().StringVarP(&addNotes, "notes", "n", "", "Notes/body for the reminder")
 	addCmd.Flags().StringVarP(&addURL, "url", "u", "", "URL to attach to the reminder")
 	addCmd.Flags().BoolVarP(&addFlagged, "flagged", "f", false, "Flag the reminder")
+	addCmd.Flags().StringVar(&addRemindMe, "remind-me", "", "Set alarm: duration before due (15m, 1h, 2d) or absolute time")
 	addCmd.Flags().BoolVarP(&addInteractive, "interactive", "i", false, "Create reminder interactively")
 
 	rootCmd.AddCommand(addCmd)

@@ -116,7 +116,7 @@ rem rm abc12345 --force
 
 | Flag | Short | Description | Default |
 |------|-------|-------------|---------|
-| `--force` | — | Skip confirmation | false |
+| `--force` / `--yes` | `-y` | Skip confirmation | false |
 
 Aliases: `rm`, `remove`
 
@@ -216,7 +216,7 @@ rem lm rm "My List" --force
 
 | Flag | Short | Description | Default |
 |------|-------|-------------|---------|
-| `--force` | — | Skip confirmation | false |
+| `--force` / `--yes` | `-y` | Skip confirmation | false |
 
 Aliases: `lm rm`
 

@@ -61,7 +61,7 @@ var deleteCmd = &cobra.Command{
 					return nil
 				}
 			} else {
-				return fmt.Errorf("use --force to delete non-interactively, or run in a terminal")
+				return fmt.Errorf("use --force/-y to delete non-interactively, or run in a terminal")
 			}
 		}
 
@@ -87,7 +87,8 @@ var deleteCmd = &cobra.Command{
 }
 
 func init() {
-	deleteCmd.Flags().BoolVar(&deleteForce, "force", false, "Skip confirmation prompt")
+	deleteCmd.Flags().BoolVarP(&deleteForce, "force", "y", false, "Skip confirmation prompt")
+	deleteCmd.Flags().BoolVar(&deleteForce, "yes", false, "Skip confirmation prompt (alias for --force)")
 	deleteCmd.Flags().BoolVarP(&deleteInteractive, "interactive", "i", false, "Select reminders interactively")
 	deleteCmd.Flags().StringVarP(&deleteList, "list", "l", "", "Filter by list name")
 	deleteCmd.Flags().BoolVar(&deleteFlagged, "flagged", false, "Filter to flagged reminders only")

@@ -120,7 +120,7 @@ rem unflag <id>
 
 # Delete (supports multiple IDs)
 rem delete <id> [id2 id3...]        # Asks for confirmation
-rem rm <id> --force                 # Skip confirmation
+rem rm <id> --force                 # Skip confirmation (--yes / -y also work)
 
 # Today — due and overdue reminders
 rem today

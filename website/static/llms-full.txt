@@ -36,7 +36,7 @@ rem complete ID
 rem uncomplete ID
 rem flag ID
 rem unflag ID
-rem delete ID [ID2 ID3...] [--force]
+rem delete ID [ID2 ID3...] [--force/--yes/-y]
 rem search QUERY [--list NAME] [--incomplete]
 rem stats
 rem today [--list NAME]
@@ -45,7 +45,7 @@ rem upcoming [--days N] [--list NAME]
 rem lists [--count]
 rem list-mgmt create NAME
 rem list-mgmt rename OLD NEW
-rem list-mgmt delete NAME [--force]
+rem list-mgmt delete NAME [--force/--yes/-y]
 rem export [--list NAME] [--format json|csv] [--output-file PATH] [--incomplete]
 rem import FILE [--list NAME] [--dry-run]
 rem interactive  (alias: rem i)

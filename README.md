@@ -95,7 +95,7 @@ rem stats
 
 ```bash
 # Create
-rem add "Title" [--list LIST] [--due DATE] [--priority high|medium|low] [--notes TEXT] [--url URL] [--flagged] [--remind-me DURATION]
+rem add "Title" [--list LIST] [--due DATE] [--priority high|medium|low] [--notes TEXT] [--url URL] [--flagged] [--remind-me DURATION] [--repeat PATTERN]
 rem add -i                          # Interactive creation
 
 # List
@@ -107,7 +107,7 @@ rem show <id>                       # Full or partial ID
 rem get <id> -o json
 
 # Update
-rem update <id> [--name TEXT] [--due DATE] [--priority LEVEL] [--notes TEXT] [--url URL] [--remind-me DURATION] [--list LIST]
+rem update <id> [--name TEXT] [--due DATE] [--priority LEVEL] [--notes TEXT] [--url URL] [--remind-me DURATION] [--repeat PATTERN] [--list LIST]
 
 # Complete / Uncomplete
 rem complete <id>

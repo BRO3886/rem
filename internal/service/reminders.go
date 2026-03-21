@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	eventkit "github.com/BRO3886/go-eventkit"
 	"github.com/BRO3886/go-eventkit/reminders"
 	"github.com/BRO3886/rem/internal/reminder"
 )
@@ -52,6 +53,10 @@ func (s *ReminderService) CreateReminder(r *reminder.Reminder) (string, error) {
 			AbsoluteDate:   a.AbsoluteDate,
 			RelativeOffset: a.RelativeOffset,
 		})
+	}
+
+	for _, rr := range r.RecurrenceRules {
+		input.RecurrenceRules = append(input.RecurrenceRules, toEventKitRecurrenceRule(rr))
 	}
 
 	created, err := s.client.CreateReminder(input)
@@ -263,6 +268,18 @@ func (s *ReminderService) UpdateReminder(id string, updates map[string]any) erro
 				}
 				input.Alarms = &ekAlarms
 			}
+		case "recurrence":
+			if value == nil {
+				empty := []eventkit.RecurrenceRule{}
+				input.RecurrenceRules = &empty
+			} else {
+				rules := value.([]reminder.RecurrenceRule)
+				ekRules := make([]eventkit.RecurrenceRule, len(rules))
+				for i, rr := range rules {
+					ekRules[i] = toEventKitRecurrenceRule(rr)
+				}
+				input.RecurrenceRules = &ekRules
+			}
 		}
 	}
 
@@ -271,7 +288,7 @@ func (s *ReminderService) UpdateReminder(id string, updates map[string]any) erro
 		input.DueDate != nil || input.ClearDueDate ||
 		input.RemindMeDate != nil || input.Priority != nil ||
 		input.Completed != nil || input.URL != nil || input.ListName != nil ||
-		input.Alarms != nil
+		input.Alarms != nil || input.RecurrenceRules != nil
 
 	if hasEventKitUpdates {
 		if _, err := s.client.UpdateReminder(id, input); err != nil {
@@ -357,6 +374,26 @@ func (s *ReminderService) UnflagReminder(id string) error {
 	return s.updateViaAppleScript(id, map[string]any{"flagged": false})
 }
 
+// toEventKitRecurrenceRule converts a domain RecurrenceRule to an eventkit RecurrenceRule.
+func toEventKitRecurrenceRule(rr reminder.RecurrenceRule) eventkit.RecurrenceRule {
+	switch rr.Frequency {
+	case reminder.FrequencyDaily:
+		return eventkit.Daily(rr.Interval)
+	case reminder.FrequencyWeekly:
+		var days []eventkit.Weekday
+		for _, d := range rr.DaysOfWeekNums {
+			days = append(days, eventkit.Weekday(d))
+		}
+		return eventkit.Weekly(rr.Interval, days...)
+	case reminder.FrequencyMonthly:
+		return eventkit.Monthly(rr.Interval, rr.DaysOfMonth...)
+	case reminder.FrequencyYearly:
+		return eventkit.Yearly(rr.Interval)
+	default:
+		return eventkit.Daily(1)
+	}
+}
+
 // fromEventKitReminder converts a go-eventkit Reminder to an internal Reminder.
 func fromEventKitReminder(r *reminders.Reminder) *reminder.Reminder {
 	result := &reminder.Reminder{
@@ -380,11 +417,13 @@ func fromEventKitReminder(r *reminders.Reminder) *reminder.Reminder {
 	// Map recurrence rules
 	for _, rule := range r.RecurrenceRules {
 		rr := reminder.RecurrenceRule{
-			Frequency: reminder.RecurrenceFrequency(rule.Frequency),
-			Interval:  rule.Interval,
+			Frequency:   reminder.RecurrenceFrequency(rule.Frequency),
+			Interval:    rule.Interval,
+			DaysOfMonth: rule.DaysOfTheMonth,
 		}
 		for _, dow := range rule.DaysOfTheWeek {
 			rr.DaysOfWeek = append(rr.DaysOfWeek, dow.DayOfTheWeek.String())
+			rr.DaysOfWeekNums = append(rr.DaysOfWeekNums, int(dow.DayOfTheWeek))
 		}
 		result.RecurrenceRules = append(result.RecurrenceRules, rr)
 	}

@@ -98,9 +98,11 @@ const (
 
 // RecurrenceRule defines how a reminder repeats.
 type RecurrenceRule struct {
-	Frequency  RecurrenceFrequency
-	Interval   int
-	DaysOfWeek []string // e.g., ["Mon", "Wed", "Fri"]
+	Frequency      RecurrenceFrequency
+	Interval       int
+	DaysOfWeek     []string // e.g., ["Mon", "Wed", "Fri"] — display names
+	DaysOfWeekNums []int    // eventkit weekday numbers (1=Sun..7=Sat) — for creation
+	DaysOfMonth    []int    // e.g., [1, 15] — for monthly rules
 }
 
 // FormatRecurrence returns a human-readable recurrence description.
@@ -134,6 +136,12 @@ func (r RecurrenceRule) String() string {
 	}
 	if len(r.DaysOfWeek) > 0 {
 		freq += " on " + strings.Join(r.DaysOfWeek, ", ")
+	} else if len(r.DaysOfMonth) > 0 {
+		days := make([]string, len(r.DaysOfMonth))
+		for i, d := range r.DaysOfMonth {
+			days[i] = fmt.Sprintf("%d", d)
+		}
+		freq += " on day " + strings.Join(days, ", ")
 	}
 	return freq
 }

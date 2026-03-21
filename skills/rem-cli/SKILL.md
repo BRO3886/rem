@@ -196,6 +196,6 @@ See [go-eventkit docs](https://github.com/BRO3886/go-eventkit) for the full API 
 
 - **macOS only** — requires EventKit framework and `osascript`
 - **No tags or subtasks** — not exposed by EventKit/AppleScript
-- **Recurrence is read-only** — displayed in `rem show` but cannot be created/modified via CLI
+- **Recurrence via `--repeat`** — supports daily, weekly (with day selection), monthly (with day-of-month selection), yearly. Use `--repeat none` to clear
 - **`--flagged` filter is slower** (~3-4s) — falls back to JXA since EventKit doesn't expose flagged
 - **List deletion** may fail on some macOS versions

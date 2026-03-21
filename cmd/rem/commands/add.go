@@ -17,7 +17,8 @@ var (
 	addNotes      string
 	addURL        string
 	addFlagged    bool
-	addRemindMe   string
+	addRemindMe    string
+	addRepeat      string
 	addInteractive bool
 )
 
@@ -30,6 +31,7 @@ var addCmd = &cobra.Command{
   rem add "Review PR" --due "next friday at 2pm" --url https://github.com/org/repo/pull/123
   rem add "Call dentist" --due "in 2 days" --notes "Ask about cleaning"
   rem add "Meeting" --due "tomorrow at 10am" --remind-me 15m
+  rem add "Standup" --due "monday 9am" --repeat "weekly on mon,wed,fri"
   rem add -i  # Interactive mode`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if addInteractive {
@@ -65,6 +67,14 @@ var addCmd = &cobra.Command{
 			r.Alarms = []reminder.Alarm{alarm}
 		}
 
+		if addRepeat != "" {
+			rule, err := parseRecurrence(addRepeat)
+			if err != nil {
+				return err
+			}
+			r.RecurrenceRules = []reminder.RecurrenceRule{rule}
+		}
+
 		id, err := reminderSvc.CreateReminder(r)
 		if err != nil {
 			return err
@@ -89,6 +99,7 @@ func init() {
 	addCmd.Flags().StringVarP(&addURL, "url", "u", "", "URL to attach to the reminder")
 	addCmd.Flags().BoolVarP(&addFlagged, "flagged", "f", false, "Flag the reminder")
 	addCmd.Flags().StringVar(&addRemindMe, "remind-me", "", "Set alarm: duration before due (15m, 1h, 2d) or absolute time")
+	addCmd.Flags().StringVar(&addRepeat, "repeat", "", "Set recurrence: daily, weekly, 'weekly on mon,wed,fri', monthly, yearly")
 	addCmd.Flags().BoolVarP(&addInteractive, "interactive", "i", false, "Create reminder interactively")
 
 	rootCmd.AddCommand(addCmd)

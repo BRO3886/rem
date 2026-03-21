@@ -21,6 +21,7 @@ rem add -i   # Interactive mode
 | `--url` | `-u` | URL to attach (stored in body) | None |
 | `--flagged` | `-f` | Flag the reminder | false |
 | `--remind-me` | — | Set alarm: duration before due (15m, 1h, 2d) or absolute time | None |
+| `--repeat` | — | Set recurrence: daily, weekly, monthly, yearly, or 'weekly on mon,wed,fri' | None |
 | `--interactive` | `-i` | Create interactively | false |
 
 Aliases: `create`, `new`
@@ -98,6 +99,7 @@ rem update abc12345 -i            # Interactive mode
 | `--url` | `-u` | New URL | — |
 | `--flagged` | — | Set flagged: true/false | — |
 | `--remind-me` | — | Set alarm: duration (15m, 1h, 2d), 'none' to clear | — |
+| `--repeat` | — | Set recurrence: daily, weekly, monthly, yearly, 'none' to clear | — |
 | `--interactive` | `-i` | Update interactively | false |
 
 Aliases: `edit`

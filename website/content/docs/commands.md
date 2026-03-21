@@ -46,6 +46,7 @@ rem add "Buy groceries" --due tomorrow --priority high --list Personal
 | `-n, --notes` | Notes/body text |
 | `-u, --url` | URL to attach (stored in body) |
 | `-f, --flagged` | Flag the reminder |
+| `--remind-me` | Set alarm: duration before due (`15m`, `1h`, `2d`) or absolute time |
 | `-i, --interactive` | Step-by-step interactive creation |
 
 ### `rem list`
@@ -70,7 +71,7 @@ rem list --list Work --incomplete --due-before 2026-03-01
 
 ### `rem show`
 
-Show full details for a single reminder.
+Show full details for a single reminder, including alarms and recurrence rules.
 
 ```bash
 rem show 6ECE
@@ -99,6 +100,7 @@ rem update 6ECE --priority medium --due "next friday"
 | `-n, --notes` | New notes |
 | `-u, --url` | New URL |
 | `--flagged` | Set flag: `true` or `false` |
+| `--remind-me` | Set alarm: duration (`15m`, `1h`, `2d`), `none` to clear |
 | `-i, --interactive` | Interactive update |
 
 ### `rem complete`
@@ -130,11 +132,11 @@ rem unflag 6ECE
 
 ### `rem delete`
 
-Delete a reminder.
+Delete one or more reminders. Supports multiple IDs for batch deletion.
 
 ```bash
 rem delete 6ECE
-rem delete 6ECE --force    # skip confirmation
+rem delete 6ECE A1B2 --force    # batch delete, skip confirmation
 ```
 
 **Aliases:** `rm`, `remove`

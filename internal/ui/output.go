@@ -201,6 +201,22 @@ func printReminderRichDetail(w io.Writer, r *reminder.Reminder) {
 		fmt.Fprintf(w, "%s %s\n", bold("Flagged:"), yellow("yes"))
 	}
 
+	if r.Recurring && len(r.RecurrenceRules) > 0 {
+		rules := make([]string, len(r.RecurrenceRules))
+		for i, rule := range r.RecurrenceRules {
+			rules[i] = rule.String()
+		}
+		fmt.Fprintf(w, "%s %s\n", bold("Repeats:"), cyan(strings.Join(rules, "; ")))
+	}
+
+	if r.HasAlarms && len(r.Alarms) > 0 {
+		alarms := make([]string, len(r.Alarms))
+		for i, a := range r.Alarms {
+			alarms[i] = a.String()
+		}
+		fmt.Fprintf(w, "%s %s\n", bold("Alarms:"), strings.Join(alarms, ", "))
+	}
+
 	if r.CreationDate != nil {
 		fmt.Fprintf(w, "%s %s\n", bold("Created:"), r.CreationDate.Local().Format("Mon Jan 02, 2006 at 3:04 PM"))
 	}
@@ -230,6 +246,20 @@ func printReminderPlainDetail(w io.Writer, r *reminder.Reminder) {
 	}
 	if r.Flagged {
 		fmt.Fprintf(w, "Flagged: yes\n")
+	}
+	if r.Recurring && len(r.RecurrenceRules) > 0 {
+		rules := make([]string, len(r.RecurrenceRules))
+		for i, rule := range r.RecurrenceRules {
+			rules[i] = rule.String()
+		}
+		fmt.Fprintf(w, "Repeats: %s\n", strings.Join(rules, "; "))
+	}
+	if r.HasAlarms && len(r.Alarms) > 0 {
+		alarms := make([]string, len(r.Alarms))
+		for i, a := range r.Alarms {
+			alarms[i] = a.String()
+		}
+		fmt.Fprintf(w, "Alarms: %s\n", strings.Join(alarms, ", "))
 	}
 }
 
@@ -272,6 +302,9 @@ func statusString(r *reminder.Reminder) string {
 	}
 	if r.Flagged {
 		parts = append(parts, "flagged")
+	}
+	if r.Recurring {
+		parts = append(parts, "recurring")
 	}
 	if len(parts) == 0 {
 		return "-"

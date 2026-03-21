@@ -1,6 +1,10 @@
 package reminder
 
-import "time"
+import (
+	"fmt"
+	"strings"
+	"time"
+)
 
 // Priority represents the priority level of a reminder.
 type Priority int
@@ -41,6 +45,99 @@ func ParsePriority(s string) Priority {
 	}
 }
 
+// Alarm represents a reminder notification alert.
+type Alarm struct {
+	AbsoluteDate   *time.Time
+	RelativeOffset time.Duration // negative = before due date
+}
+
+// FormatAlarm returns a human-readable description of the alarm.
+func (a Alarm) String() string {
+	if a.AbsoluteDate != nil {
+		return a.AbsoluteDate.Local().Format("Mon Jan 02, 2006 at 3:04 PM")
+	}
+	d := a.RelativeOffset
+	if d == 0 {
+		return "at time of event"
+	}
+	// RelativeOffset is negative (before due date)
+	if d < 0 {
+		d = -d
+	}
+	switch {
+	case d < time.Hour:
+		m := int(d.Minutes())
+		if m == 1 {
+			return "1 minute before"
+		}
+		return fmt.Sprintf("%d minutes before", m)
+	case d < 24*time.Hour:
+		h := int(d.Hours())
+		if h == 1 {
+			return "1 hour before"
+		}
+		return fmt.Sprintf("%d hours before", h)
+	default:
+		days := int(d.Hours() / 24)
+		if days == 1 {
+			return "1 day before"
+		}
+		return fmt.Sprintf("%d days before", days)
+	}
+}
+
+// RecurrenceFrequency defines how often a reminder repeats.
+type RecurrenceFrequency int
+
+const (
+	FrequencyDaily   RecurrenceFrequency = 0
+	FrequencyWeekly  RecurrenceFrequency = 1
+	FrequencyMonthly RecurrenceFrequency = 2
+	FrequencyYearly  RecurrenceFrequency = 3
+)
+
+// RecurrenceRule defines how a reminder repeats.
+type RecurrenceRule struct {
+	Frequency  RecurrenceFrequency
+	Interval   int
+	DaysOfWeek []string // e.g., ["Mon", "Wed", "Fri"]
+}
+
+// FormatRecurrence returns a human-readable recurrence description.
+func (r RecurrenceRule) String() string {
+	freq := ""
+	switch r.Frequency {
+	case FrequencyDaily:
+		if r.Interval == 1 {
+			freq = "every day"
+		} else {
+			freq = fmt.Sprintf("every %d days", r.Interval)
+		}
+	case FrequencyWeekly:
+		if r.Interval == 1 {
+			freq = "every week"
+		} else {
+			freq = fmt.Sprintf("every %d weeks", r.Interval)
+		}
+	case FrequencyMonthly:
+		if r.Interval == 1 {
+			freq = "every month"
+		} else {
+			freq = fmt.Sprintf("every %d months", r.Interval)
+		}
+	case FrequencyYearly:
+		if r.Interval == 1 {
+			freq = "every year"
+		} else {
+			freq = fmt.Sprintf("every %d years", r.Interval)
+		}
+	}
+	if len(r.DaysOfWeek) > 0 {
+		freq += " on " + strings.Join(r.DaysOfWeek, ", ")
+	}
+	return freq
+}
+
 // Reminder represents a single reminder item.
 type Reminder struct {
 	ID               string
@@ -57,6 +154,10 @@ type Reminder struct {
 	Flagged          bool
 	Completed        bool
 	URL              string // stored in body, extracted for convenience
+	Recurring        bool
+	RecurrenceRules  []RecurrenceRule
+	HasAlarms        bool
+	Alarms           []Alarm
 }
 
 // List represents a Reminders list.

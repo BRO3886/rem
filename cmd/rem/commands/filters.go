@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/BRO3886/go-eventkit/dateparser"
@@ -15,6 +16,23 @@ func parseDate(input string) (time.Time, error) {
 		dateparser.WithSmartTimeRollover(),
 		dateparser.WithEOWSkipToday(),
 	)
+}
+
+// parseAlarm parses an alarm specification. Supports:
+//   - Relative offsets: "15m", "1h", "2d", "0" (at time of event)
+//   - Absolute times: any input parseable by parseDate (e.g., "tomorrow at 9am")
+func parseAlarm(input string) (reminder.Alarm, error) {
+	// Try relative offset first (e.g., "15m", "1h", "2d")
+	if d, err := dateparser.ParseAlertDuration(input); err == nil {
+		return reminder.Alarm{RelativeOffset: -d}, nil // negative = before due date
+	}
+
+	// Try absolute date
+	t, err := parseDate(input)
+	if err != nil {
+		return reminder.Alarm{}, fmt.Errorf("invalid alarm: %q — use a duration (15m, 1h, 2d) or a date/time", input)
+	}
+	return reminder.Alarm{AbsoluteDate: &t}, nil
 }
 
 // completeFilter builds the filter for the complete/uncomplete interactive flow.

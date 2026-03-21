@@ -47,6 +47,13 @@ func (s *ReminderService) CreateReminder(r *reminder.Reminder) (string, error) {
 		input.URL = r.URL
 	}
 
+	for _, a := range r.Alarms {
+		input.Alarms = append(input.Alarms, reminders.Alarm{
+			AbsoluteDate:   a.AbsoluteDate,
+			RelativeOffset: a.RelativeOffset,
+		})
+	}
+
 	created, err := s.client.CreateReminder(input)
 	if err != nil {
 		return "", fmt.Errorf("failed to create reminder: %w", err)
@@ -241,6 +248,21 @@ func (s *ReminderService) UpdateReminder(id string, updates map[string]any) erro
 		case "list":
 			v := value.(string)
 			input.ListName = &v
+		case "alarms":
+			if value == nil {
+				empty := []reminders.Alarm{}
+				input.Alarms = &empty
+			} else {
+				alarms := value.([]reminder.Alarm)
+				ekAlarms := make([]reminders.Alarm, len(alarms))
+				for i, a := range alarms {
+					ekAlarms[i] = reminders.Alarm{
+						AbsoluteDate:   a.AbsoluteDate,
+						RelativeOffset: a.RelativeOffset,
+					}
+				}
+				input.Alarms = &ekAlarms
+			}
 		}
 	}
 
@@ -248,7 +270,8 @@ func (s *ReminderService) UpdateReminder(id string, updates map[string]any) erro
 	hasEventKitUpdates := input.Title != nil || input.Notes != nil ||
 		input.DueDate != nil || input.ClearDueDate ||
 		input.RemindMeDate != nil || input.Priority != nil ||
-		input.Completed != nil || input.URL != nil || input.ListName != nil
+		input.Completed != nil || input.URL != nil || input.ListName != nil ||
+		input.Alarms != nil
 
 	if hasEventKitUpdates {
 		if _, err := s.client.UpdateReminder(id, input); err != nil {
@@ -302,6 +325,12 @@ func (s *ReminderService) DeleteReminder(id string) error {
 	return nil
 }
 
+// DeleteReminders deletes multiple reminders in a single batch call.
+// Returns a map of reminder ID to error for any that failed.
+func (s *ReminderService) DeleteReminders(ids []string) map[string]error {
+	return s.client.DeleteReminders(ids)
+}
+
 // CompleteReminder marks a reminder as completed.
 func (s *ReminderService) CompleteReminder(id string) error {
 	if _, err := s.client.CompleteReminder(id); err != nil {
@@ -344,6 +373,28 @@ func fromEventKitReminder(r *reminders.Reminder) *reminder.Reminder {
 		Completed:        r.Completed,
 		Flagged:          r.Flagged,
 		URL:              r.URL,
+		Recurring:        r.Recurring,
+		HasAlarms:        r.HasAlarms,
+	}
+
+	// Map recurrence rules
+	for _, rule := range r.RecurrenceRules {
+		rr := reminder.RecurrenceRule{
+			Frequency: reminder.RecurrenceFrequency(rule.Frequency),
+			Interval:  rule.Interval,
+		}
+		for _, dow := range rule.DaysOfTheWeek {
+			rr.DaysOfWeek = append(rr.DaysOfWeek, dow.DayOfTheWeek.String())
+		}
+		result.RecurrenceRules = append(result.RecurrenceRules, rr)
+	}
+
+	// Map alarms
+	for _, a := range r.Alarms {
+		result.Alarms = append(result.Alarms, reminder.Alarm{
+			AbsoluteDate:   a.AbsoluteDate,
+			RelativeOffset: a.RelativeOffset,
+		})
 	}
 
 	// For backwards compatibility: if URL is empty but notes contain a URL, extract it

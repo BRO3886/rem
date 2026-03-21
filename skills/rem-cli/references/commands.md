@@ -8,6 +8,7 @@ Create a new reminder.
 rem add "Buy groceries" --list Personal --due tomorrow --priority high
 rem add "Review PR" --due "next friday at 2pm" --url https://github.com/org/repo/pull/123
 rem add "Call dentist" --notes "Ask about cleaning"
+rem add "Meeting" --due "tomorrow at 10am" --remind-me 15m
 rem add -i   # Interactive mode
 ```
 
@@ -19,6 +20,7 @@ rem add -i   # Interactive mode
 | `--notes` | `-n` | Notes/body text | Empty |
 | `--url` | `-u` | URL to attach (stored in body) | None |
 | `--flagged` | `-f` | Flag the reminder | false |
+| `--remind-me` | — | Set alarm: duration before due (15m, 1h, 2d) or absolute time | None |
 | `--interactive` | `-i` | Create interactively | false |
 
 Aliases: `create`, `new`
@@ -82,6 +84,7 @@ rem update abc12345 --name "New title"
 rem update abc12345 --due none    # Clear due date
 rem update abc12345 --flagged true
 rem update abc12345 --list "Work"  # Move to a different list
+rem update abc12345 --remind-me 15m
 rem update abc12345 -i            # Interactive mode
 ```
 
@@ -94,6 +97,7 @@ rem update abc12345 -i            # Interactive mode
 | `--priority` | `-p` | New priority: high, medium, low, none | — |
 | `--url` | `-u` | New URL | — |
 | `--flagged` | — | Set flagged: true/false | — |
+| `--remind-me` | — | Set alarm: duration (15m, 1h, 2d), 'none' to clear | — |
 | `--interactive` | `-i` | Update interactively | false |
 
 Aliases: `edit`
@@ -102,10 +106,11 @@ Aliases: `edit`
 
 ## rem delete
 
-Delete a reminder. Prompts for confirmation unless `--force` is used.
+Delete one or more reminders. Supports multiple IDs for batch deletion. Prompts for confirmation unless `--force` is used.
 
 ```bash
 rem delete abc12345
+rem delete abc12345 def67890 --force
 rem rm abc12345 --force
 ```
 

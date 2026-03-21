@@ -70,8 +70,8 @@ make build
 # List all reminder lists
 rem lists --count
 
-# Create a reminder
-rem add "Buy groceries" --list Personal --due tomorrow --priority high
+# Create a reminder with an alarm
+rem add "Buy groceries" --list Personal --due tomorrow --priority high --remind-me 15m
 
 # List incomplete reminders
 rem list --list Work --incomplete

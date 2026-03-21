@@ -159,6 +159,22 @@ func ImportJSON(r io.Reader) ([]*reminder.Reminder, error) {
 			}
 		}
 
+		for _, ja := range jr.Alarms {
+			a := reminder.Alarm{}
+			if ja.AbsoluteDate != nil {
+				t, err := time.ParseInLocation(timeFormat, *ja.AbsoluteDate, time.Now().Location())
+				if err == nil {
+					a.AbsoluteDate = &t
+				}
+			} else if ja.RelativeOffset != "" {
+				d, err := time.ParseDuration(ja.RelativeOffset)
+				if err == nil {
+					a.RelativeOffset = d
+				}
+			}
+			rem.Alarms = append(rem.Alarms, a)
+		}
+
 		reminders = append(reminders, rem)
 	}
 

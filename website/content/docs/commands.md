@@ -44,7 +44,7 @@ rem add "Buy groceries" --due tomorrow --priority high --list Personal
 | `-d, --due` | Due date (natural language or standard format) |
 | `-p, --priority` | Priority: `high`, `medium`, `low`, `none` |
 | `-n, --notes` | Notes/body text |
-| `-u, --url` | URL to attach (stored in body) |
+| `-u, --url` | URL to attach |
 | `-f, --flagged` | Flag the reminder |
 | `--remind-me` | Set alarm: duration before due (`15m`, `1h`, `2d`) or absolute time |
 | `--repeat` | Set recurrence: `daily`, `weekly`, `monthly`, `yearly`, or `weekly on mon,wed,fri` |

@@ -18,7 +18,7 @@ rem add -i   # Interactive mode
 | `--due` | `-d` | Due date (natural language or ISO) | None |
 | `--priority` | `-p` | Priority: high, medium, low, none | none |
 | `--notes` | `-n` | Notes/body text | Empty |
-| `--url` | `-u` | URL to attach (stored in body) | None |
+| `--url` | `-u` | URL to attach | None |
 | `--flagged` | `-f` | Flag the reminder | false |
 | `--remind-me` | — | Set alarm: duration before due (15m, 1h, 2d) or absolute time | None |
 | `--repeat` | — | Set recurrence: daily, weekly, monthly, yearly, or 'weekly on mon,wed,fri' | None |

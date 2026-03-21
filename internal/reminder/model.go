@@ -161,7 +161,7 @@ type Reminder struct {
 	Priority         Priority
 	Flagged          bool
 	Completed        bool
-	URL              string // stored in body, extracted for convenience
+	URL              string // native EventKit URL field (backwards compat: extracted from body if empty)
 	Recurring        bool
 	RecurrenceRules  []RecurrenceRule
 	HasAlarms        bool

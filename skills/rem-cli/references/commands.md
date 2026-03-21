@@ -257,17 +257,36 @@ Output includes: total, completed, incomplete, flagged, overdue counts, completi
 
 ---
 
+## rem today
+
+Show today's due and overdue reminders (incomplete with due date up to end of today).
+
+```bash
+rem today
+rem today --list Work
+rem today -o json
+```
+
+| Flag | Short | Description | Default |
+|------|-------|-------------|---------|
+| `--list` | `-l` | Filter by list name | All lists |
+| `--output` | `-o` | Output format: table, json, plain | table |
+
+---
+
 ## rem overdue
 
 Show overdue reminders (incomplete with due date in the past).
 
 ```bash
 rem overdue
+rem overdue --list Work
 rem overdue -o json
 ```
 
 | Flag | Short | Description | Default |
 |------|-------|-------------|---------|
+| `--list` | `-l` | Filter by list name | All lists |
 | `--output` | `-o` | Output format: table, json, plain | table |
 
 ---
@@ -279,12 +298,14 @@ Show upcoming reminders (due in the next N days).
 ```bash
 rem upcoming
 rem upcoming --days 14
+rem upcoming --list Work
 rem upcoming -o json
 ```
 
 | Flag | Short | Description | Default |
 |------|-------|-------------|---------|
 | `--days` | — | Number of days to look ahead | 7 |
+| `--list` | `-l` | Filter by list name | All lists |
 | `--output` | `-o` | Output format: table, json, plain | table |
 
 ---

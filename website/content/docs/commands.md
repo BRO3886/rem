@@ -1,6 +1,6 @@
 ---
 title: "Commands"
-description: "Complete reference for all 19 rem CLI commands: rem add, rem list, rem complete, rem delete, rem update, rem search, rem stats, rem overdue, rem upcoming, rem export, rem import, rem interactive, rem lists, rem list-mgmt, rem flag, rem skills, and more."
+description: "Complete reference for all 20 rem CLI commands: rem add, rem list, rem complete, rem delete, rem update, rem search, rem stats, rem today, rem overdue, rem upcoming, rem export, rem import, rem interactive, rem lists, rem list-mgmt, rem flag, rem skills, and more."
 keywords:
   - rem CLI commands reference
   - rem add reminder terminal
@@ -170,13 +170,31 @@ rem stats
 
 Displays: total count, completed, incomplete, flagged, overdue, completion rate, and per-list breakdown.
 
+### `rem today`
+
+Show today's due and overdue reminders.
+
+```bash
+rem today
+rem today --list Work
+```
+
+| Flag | Description |
+|------|-------------|
+| `-l, --list` | Filter by list name |
+
 ### `rem overdue`
 
 Show all overdue incomplete reminders.
 
 ```bash
 rem overdue
+rem overdue --list Work
 ```
+
+| Flag | Description |
+|------|-------------|
+| `-l, --list` | Filter by list name |
 
 ### `rem upcoming`
 
@@ -190,6 +208,7 @@ rem upcoming --days 14 # next 14 days
 | Flag | Description |
 |------|-------------|
 | `--days` | Number of days to look ahead (default: 7) |
+| `-l, --list` | Filter by list name |
 
 ## Lists
 

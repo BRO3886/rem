@@ -9,7 +9,7 @@ compatibility: Requires macOS with Reminders.app. Requires Xcode Command Line To
 
 # rem — CLI for macOS Reminders
 
-A Go CLI that wraps macOS Reminders. Sub-200ms reads via cgo + EventKit. Single binary, no dependencies at runtime.
+A Go CLI that wraps macOS Reminders. Sub-200ms reads AND writes via cgo + EventKit. Single binary, no dependencies at runtime.
 
 ## Installation
 
@@ -84,6 +84,7 @@ rem stats
 |---------|-------------|
 | `rem search <query>` | Search title and notes |
 | `rem stats` | Show statistics and per-list breakdown |
+| `rem today` | Show today's due and overdue reminders |
 | `rem overdue` | Show overdue reminders |
 | `rem upcoming` | Show reminders due in next N days (default: 7) |
 
@@ -147,7 +148,7 @@ The `NO_COLOR` environment variable is respected.
 
 ### URL Storage
 
-macOS Reminders has no native URL field. rem stores URLs in the notes/body field with a `URL: ` prefix and extracts them for display.
+URLs are stored natively via EventKit's URL field (go-eventkit v0.4.0+). For backwards compatibility, rem also extracts URLs from the notes/body field if the native field is empty.
 
 ## Common Workflows
 

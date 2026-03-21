@@ -47,6 +47,7 @@ rem add "Buy groceries" --due tomorrow --priority high --list Personal
 | `-u, --url` | URL to attach (stored in body) |
 | `-f, --flagged` | Flag the reminder |
 | `--remind-me` | Set alarm: duration before due (`15m`, `1h`, `2d`) or absolute time |
+| `--repeat` | Set recurrence: `daily`, `weekly`, `monthly`, `yearly`, or `weekly on mon,wed,fri` |
 | `-i, --interactive` | Step-by-step interactive creation |
 
 ### `rem list`
@@ -101,6 +102,7 @@ rem update 6ECE --priority medium --due "next friday"
 | `-u, --url` | New URL |
 | `--flagged` | Set flag: `true` or `false` |
 | `--remind-me` | Set alarm: duration (`15m`, `1h`, `2d`), `none` to clear |
+| `--repeat` | Set recurrence: `daily`, `weekly`, `monthly`, `yearly`, `none` to clear |
 | `-i, --interactive` | Interactive update |
 
 ### `rem complete`

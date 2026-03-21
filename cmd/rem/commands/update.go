@@ -17,6 +17,7 @@ var (
 	updateFlagged     string
 	updateList        string
 	updateRemindMe    string
+	updateRepeat      string
 	updateInteractive bool
 )
 
@@ -30,6 +31,8 @@ var updateCmd = &cobra.Command{
   rem edit abc12345 --name "New title"
   rem update abc12345 --list "Work"
   rem update abc12345 --remind-me 15m
+  rem update abc12345 --repeat "weekly on mon,fri"
+  rem update abc12345 --repeat none
   rem update -i
   rem update -i abc12345`,
 	Args: func(cmd *cobra.Command, args []string) error {
@@ -105,6 +108,17 @@ var updateCmd = &cobra.Command{
 				updates["alarms"] = []reminder.Alarm{alarm}
 			}
 		}
+		if cmd.Flags().Changed("repeat") {
+			if updateRepeat == "" || updateRepeat == "none" {
+				updates["recurrence"] = nil
+			} else {
+				rule, err := parseRecurrence(updateRepeat)
+				if err != nil {
+					return err
+				}
+				updates["recurrence"] = []reminder.RecurrenceRule{rule}
+			}
+		}
 
 		if len(updates) == 0 {
 			return fmt.Errorf("no updates specified")
@@ -129,6 +143,7 @@ func init() {
 	updateCmd.Flags().StringVar(&updateFlagged, "flagged", "", "Set flagged status: true/false")
 	updateCmd.Flags().StringVarP(&updateList, "list", "l", "", "Move reminder to a different list")
 	updateCmd.Flags().StringVar(&updateRemindMe, "remind-me", "", "Set alarm: duration before due (15m, 1h, 2d), 'none' to clear")
+	updateCmd.Flags().StringVar(&updateRepeat, "repeat", "", "Set recurrence: daily, weekly, 'weekly on mon,wed,fri', 'none' to clear")
 	updateCmd.Flags().BoolVarP(&updateInteractive, "interactive", "i", false, "Update interactively")
 
 	rootCmd.AddCommand(updateCmd)

@@ -2,6 +2,9 @@ package commands
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/BRO3886/go-eventkit/dateparser"
@@ -33,6 +36,106 @@ func parseAlarm(input string) (reminder.Alarm, error) {
 		return reminder.Alarm{}, fmt.Errorf("invalid alarm: %q — use a duration (15m, 1h, 2d) or a date/time", input)
 	}
 	return reminder.Alarm{AbsoluteDate: &t}, nil
+}
+
+// weekdayNum maps day name strings to eventkit weekday numbers (1=Sun..7=Sat).
+var weekdayNum = map[string]int{
+	"sun": 1, "sunday": 1,
+	"mon": 2, "monday": 2,
+	"tue": 3, "tuesday": 3,
+	"wed": 4, "wednesday": 4,
+	"thu": 5, "thursday": 5,
+	"fri": 6, "friday": 6,
+	"sat": 7, "saturday": 7,
+}
+
+// weekdayName maps eventkit weekday numbers to short display names.
+var weekdayName = map[int]string{
+	1: "Sun", 2: "Mon", 3: "Tue", 4: "Wed", 5: "Thu", 6: "Fri", 7: "Sat",
+}
+
+var everyNPattern = regexp.MustCompile(`^every\s+(\d+)\s+(day|days|week|weeks|month|months|year|years)$`)
+
+// parseRecurrence parses a recurrence specification into a domain RecurrenceRule.
+// Supported patterns:
+//   - "daily", "every day", "every 2 days"
+//   - "weekly", "every week", "every 2 weeks"
+//   - "weekly on mon,wed,fri"
+//   - "monthly", "every month", "every 2 months"
+//   - "monthly on 1,15" (days of month)
+//   - "yearly", "every year", "every 2 years"
+func parseRecurrence(input string) (reminder.RecurrenceRule, error) {
+	input = strings.TrimSpace(strings.ToLower(input))
+
+	// Split "on" clause: "weekly on mon,wed" → base="weekly", onClause="mon,wed"
+	base, onClause, _ := strings.Cut(input, " on ")
+	base = strings.TrimSpace(base)
+	onClause = strings.TrimSpace(onClause)
+
+	// Parse base frequency and interval
+	var freq reminder.RecurrenceFrequency
+	interval := 1
+
+	switch base {
+	case "daily", "every day":
+		freq = reminder.FrequencyDaily
+	case "weekly", "every week":
+		freq = reminder.FrequencyWeekly
+	case "monthly", "every month":
+		freq = reminder.FrequencyMonthly
+	case "yearly", "every year":
+		freq = reminder.FrequencyYearly
+	default:
+		matches := everyNPattern.FindStringSubmatch(base)
+		if matches == nil {
+			return reminder.RecurrenceRule{}, fmt.Errorf("invalid recurrence: %q — use 'daily', 'weekly', 'monthly', 'yearly', or 'every N days/weeks/months/years'", input)
+		}
+		interval, _ = strconv.Atoi(matches[1])
+		unit := matches[2]
+		switch {
+		case strings.HasPrefix(unit, "day"):
+			freq = reminder.FrequencyDaily
+		case strings.HasPrefix(unit, "week"):
+			freq = reminder.FrequencyWeekly
+		case strings.HasPrefix(unit, "month"):
+			freq = reminder.FrequencyMonthly
+		case strings.HasPrefix(unit, "year"):
+			freq = reminder.FrequencyYearly
+		}
+	}
+
+	rule := reminder.RecurrenceRule{
+		Frequency: freq,
+		Interval:  interval,
+	}
+
+	// Parse "on" clause
+	if onClause != "" {
+		parts := strings.Split(onClause, ",")
+		switch freq {
+		case reminder.FrequencyWeekly:
+			for _, p := range parts {
+				num, ok := weekdayNum[strings.TrimSpace(p)]
+				if !ok {
+					return reminder.RecurrenceRule{}, fmt.Errorf("unknown day: %q — use mon, tue, wed, thu, fri, sat, sun", strings.TrimSpace(p))
+				}
+				rule.DaysOfWeekNums = append(rule.DaysOfWeekNums, num)
+				rule.DaysOfWeek = append(rule.DaysOfWeek, weekdayName[num])
+			}
+		case reminder.FrequencyMonthly:
+			for _, p := range parts {
+				d, err := strconv.Atoi(strings.TrimSpace(p))
+				if err != nil || d < 1 || d > 31 {
+					return reminder.RecurrenceRule{}, fmt.Errorf("invalid day of month: %q — use 1-31", strings.TrimSpace(p))
+				}
+				rule.DaysOfMonth = append(rule.DaysOfMonth, d)
+			}
+		default:
+			return reminder.RecurrenceRule{}, fmt.Errorf("'on' clause not supported for %s frequency", base)
+		}
+	}
+
+	return rule, nil
 }
 
 // completeFilter builds the filter for the complete/uncomplete interactive flow.

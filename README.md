@@ -9,7 +9,7 @@ A blazing fast CLI for macOS Reminders. Sub-200ms reads AND writes via EventKit,
 - **Sub-200ms reads AND writes** — EventKit via cgo (go-eventkit), direct memory access, no IPC
 - **Single binary** — EventKit compiled in via cgo, no helper processes
 - **Natural language dates** — `tomorrow`, `next friday at 2pm`, `in 3 hours`, `eod`
-- **19 commands** — full CRUD, search, stats, overdue, upcoming, interactive mode
+- **20 commands** — full CRUD, search, stats, overdue, upcoming, interactive mode
 - **Multiple output formats** — table, JSON, plain text
 - **Import/Export** — JSON and CSV with full property round-trip
 - **Powered by [go-eventkit](https://github.com/BRO3886/go-eventkit)** — use the same library directly for programmatic Go access
@@ -95,7 +95,7 @@ rem stats
 
 ```bash
 # Create
-rem add "Title" [--list LIST] [--due DATE] [--priority high|medium|low] [--notes TEXT] [--url URL] [--flagged]
+rem add "Title" [--list LIST] [--due DATE] [--priority high|medium|low] [--notes TEXT] [--url URL] [--flagged] [--remind-me DURATION]
 rem add -i                          # Interactive creation
 
 # List
@@ -107,7 +107,7 @@ rem show <id>                       # Full or partial ID
 rem get <id> -o json
 
 # Update
-rem update <id> [--name TEXT] [--due DATE] [--priority LEVEL] [--notes TEXT] [--url URL]
+rem update <id> [--name TEXT] [--due DATE] [--priority LEVEL] [--notes TEXT] [--url URL] [--remind-me DURATION] [--list LIST]
 
 # Complete / Uncomplete
 rem complete <id>
@@ -118,9 +118,12 @@ rem uncomplete <id>
 rem flag <id>
 rem unflag <id>
 
-# Delete
-rem delete <id>                     # Asks for confirmation
+# Delete (supports multiple IDs)
+rem delete <id> [id2 id3...]        # Asks for confirmation
 rem rm <id> --force                 # Skip confirmation
+
+# Today — due and overdue reminders
+rem today
 ```
 
 ### Lists

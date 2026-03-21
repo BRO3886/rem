@@ -26,21 +26,22 @@ sudo mv rem /usr/local/bin/rem
 # Use rem-darwin-amd64.tar.gz for Intel Macs
 
 
-## Commands (all 19)
+## Commands (all 20)
 
-rem add "title" [--due DATE] [--priority high|medium|low|none] [--list NAME] [--notes TEXT] [--url URL] [--flagged] [-i]
+rem add "title" [--due DATE] [--priority high|medium|low|none] [--list NAME] [--notes TEXT] [--url URL] [--flagged] [--remind-me DURATION] [-i]
 rem list [--list NAME] [--incomplete] [--completed] [--flagged] [--due-before DATE] [--due-after DATE] [-s QUERY]
 rem show ID
-rem update ID [--name TEXT] [--due DATE] [--priority LEVEL] [--notes TEXT] [--url URL] [--flagged true|false] [-i]
+rem update ID [--name TEXT] [--due DATE] [--priority LEVEL] [--notes TEXT] [--url URL] [--flagged true|false] [--remind-me DURATION] [--list NAME] [-i]
 rem complete ID
 rem uncomplete ID
 rem flag ID
 rem unflag ID
-rem delete ID [--force]
+rem delete ID [ID2 ID3...] [--force]
 rem search QUERY [--list NAME] [--incomplete]
 rem stats
-rem overdue
-rem upcoming [--days N]
+rem today [--list NAME]
+rem overdue [--list NAME]
+rem upcoming [--days N] [--list NAME]
 rem lists [--count]
 rem list-mgmt create NAME
 rem list-mgmt rename OLD NEW
@@ -58,12 +59,13 @@ Global flags: -o table|json|plain, --no-color, -h
 
 ## Natural Language Date Formats
 
-rem understands these date patterns (used with --due and --remind):
-- Relative: "in 2 days", "in 3 hours", "in 30 minutes"
-- Named: "today", "tomorrow", "yesterday"
-- Day of week: "next monday", "next friday"
-- Special: "eod" (5pm today), "eow" (Friday 5pm), "next week", "next month"
-- Compound: "next friday at 2pm", "tomorrow at 3:30pm"
+rem understands these date patterns (used with --due and --remind-me):
+- Relative: "in 2 days", "in 3 hours", "in 30 minutes", "5 days ago"
+- Named: "now", "today", "tomorrow", "yesterday"
+- Day of week: "monday", "next monday", "next friday", "monday 2pm"
+- Special: "eod" (5pm today), "eow" (Friday 5pm), "this week", "next week" (next Monday), "next month" (1st of next month)
+- Compound: "next friday at 2pm", "tomorrow at 3:30pm", "today 5pm"
+- Month-day: "mar 15", "21 march", "december 31 11:59pm"
 - Time only: "5pm", "17:00", "3:30pm"
 - ISO 8601: "2026-02-15", "2026-02-15T14:30:00"
 - US format: "02/15/2026", "2/15"
@@ -72,7 +74,7 @@ rem understands these date patterns (used with --due and --remind):
 
 ## Architecture
 
-rem uses go-eventkit (github.com/BRO3886/go-eventkit v0.2.1) for ALL reads and writes:
+rem uses go-eventkit (github.com/BRO3886/go-eventkit v0.4.0) for ALL reads and writes:
 - Reminder CRUD: create, read, update, delete, complete/uncomplete via EventKit
 - List CRUD: create, rename, delete via EventKit
 - Performance: <200ms for all EventKit operations

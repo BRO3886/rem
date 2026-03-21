@@ -143,6 +143,6 @@ rem skills install --agent all       # All supported agents
 
 ## What's next
 
-- [Commands](/docs/commands/) — Full reference for all 19 commands
+- [Commands](/docs/commands/) — Full reference for all 20 commands
 - [Architecture](/docs/architecture/) — How rem works under the hood
 - [Go API](/docs/api/) — Use rem as a library in your Go programs

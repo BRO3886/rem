@@ -143,7 +143,7 @@ rem delete 6ECE A1B2 --force    # batch delete, skip confirmation
 
 | Flag | Description |
 |------|-------------|
-| `--force` | Skip the confirmation prompt |
+| `--force` / `--yes` / `-y` | Skip the confirmation prompt |
 
 ## Search & Analytics
 

@@ -122,7 +122,7 @@ var listDeleteCmd = &cobra.Command{
 					return nil
 				}
 			} else {
-				return fmt.Errorf("use --force to delete non-interactively, or run in a terminal")
+				return fmt.Errorf("use --force/-y to delete non-interactively, or run in a terminal")
 			}
 		}
 
@@ -152,7 +152,8 @@ func init() {
 	listCreateCmd.Flags().BoolVarP(&listCreateInteractive, "interactive", "i", false, "Create list interactively")
 	listRenameCmd.Flags().BoolVarP(&listRenameInteractive, "interactive", "i", false, "Rename list interactively")
 	listDeleteCmd.Flags().BoolVarP(&listDeleteInteractive, "interactive", "i", false, "Delete list interactively")
-	listDeleteCmd.Flags().BoolVar(&listDeleteForce, "force", false, "Skip confirmation prompt")
+	listDeleteCmd.Flags().BoolVarP(&listDeleteForce, "force", "y", false, "Skip confirmation prompt")
+	listDeleteCmd.Flags().BoolVar(&listDeleteForce, "yes", false, "Skip confirmation prompt (alias for --force)")
 
 	listMgmtCmd.AddCommand(listCreateCmd)
 	listMgmtCmd.AddCommand(listRenameCmd)

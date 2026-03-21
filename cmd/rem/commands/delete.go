@@ -14,10 +14,11 @@ var (
 )
 
 var deleteCmd = &cobra.Command{
-	Use:     "delete [id]",
+	Use:     "delete [id...]",
 	Aliases: []string{"rm", "remove"},
-	Short:   "Delete a reminder",
+	Short:   "Delete one or more reminders",
 	Example: `  rem delete abc12345
+  rem delete abc12345 def67890 --force
   rem rm abc12345 --force
   rem delete -i
   rem delete -i --list Work --flagged`,

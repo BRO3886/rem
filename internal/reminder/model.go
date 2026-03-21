@@ -66,7 +66,11 @@ func (a Alarm) String() string {
 	}
 	switch {
 	case d < time.Hour:
-		return fmt.Sprintf("%d minutes before", int(d.Minutes()))
+		m := int(d.Minutes())
+		if m == 1 {
+			return "1 minute before"
+		}
+		return fmt.Sprintf("%d minutes before", m)
 	case d < 24*time.Hour:
 		h := int(d.Hours())
 		if h == 1 {

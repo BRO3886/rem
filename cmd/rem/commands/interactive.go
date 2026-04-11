@@ -181,6 +181,7 @@ func runAddInteractive() error {
 			fmt.Fprintf(os.Stderr, "Warning: could not parse due date '%s': %v\n", dueStr, err)
 		} else {
 			r.DueDate = &dueDate
+			r.Alarms = []reminder.Alarm{{RelativeOffset: 0}}
 		}
 	}
 

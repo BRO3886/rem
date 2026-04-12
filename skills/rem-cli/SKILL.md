@@ -1,218 +1,140 @@
 ---
 name: rem
-description: Manages macOS Reminders from the terminal using the rem CLI. Creates, lists, updates, completes, deletes, searches, and exports reminders and lists. Supports natural language due dates, filtering, import/export, and multiple output formats. Use when the user wants to interact with Apple Reminders via command line, automate reminder workflows, or build scripts around macOS Reminders.
-metadata:
-  author: BRO3886
-  version: "0.7.0"
-compatibility: Requires macOS with Reminders.app. Requires Xcode Command Line Tools for building from source.
+description: Create, list, update, complete, and search macOS Reminders via the rem CLI. Use when the user wants to manage Apple Reminders from the terminal, automate reminder workflows, reference reminders in shell scripts, or schedule anything on macOS.
+allowed-tools: Bash(rem *) Bash(date *)
+argument-hint: "[natural language request]"
 ---
 
-# rem — CLI for macOS Reminders
+# rem — macOS Reminders from the terminal
 
-A Go CLI that wraps macOS Reminders. Sub-200ms reads AND writes via cgo + EventKit. Single binary, no dependencies at runtime.
+rem is a single-binary Go CLI that reads and writes the Apple Reminders database in under 200ms via EventKit (cgo). Every `rem` invocation is fast and safe to run.
 
-## Installation
+## Current time (do not guess, use these values)
 
-```bash
-# macOS (recommended)
-curl -fsSL https://rem.sidv.dev/install | bash
+- Today: !`date +"%A, %B %-d, %Y"`
+- ISO date: !`date +"%Y-%m-%d"`
+- Local time: !`date +"%H:%M %Z"`
+- Day of week: !`date +"%A"`
+- Tomorrow (ISO): !`date -v+1d +"%Y-%m-%d"`
+- End of week (Friday ISO): !`date -v+fri +"%Y-%m-%d"`
 
-# Or via Go
-go install github.com/BRO3886/rem/cmd/rem@latest
-```
+**When the user says relative dates like "tomorrow", "next friday", "end of week", or "last tuesday", resolve them against the values above before calling rem.** Don't ask the user "what is today" and don't guess from training data.
 
-Install this skill into your agent:
+rem's `--due` flag accepts natural language directly (see [references/dates.md](references/dates.md)), so in many cases you can pass the user's phrase through verbatim. But if the user asks something ambiguous ("what was I supposed to do yesterday?"), use the ISO date above and query rem with `--due-before` / `--due-after` against an exact date.
 
-```bash
-# Claude Code or Codex
-rem skills install
+## When to use this skill
 
-# OpenClaw
-rem skills install --agent openclaw
-```
+Use rem any time the user wants to:
 
-## Quick Start
+- Add, list, search, complete, or delete macOS Reminders
+- Summarize "what's due today" / "what's overdue" / "what's coming up"
+- Capture quick tasks from natural language ("remind me to call dentist tomorrow")
+- Move reminders between lists, reprioritize, or add URLs and notes
+- Export reminders to JSON / CSV, or import them back
+- Manage reminder lists (create, rename, delete)
 
-```bash
-# See all lists with reminder counts
-rem lists --count
+Do NOT use rem for:
 
-# Add a reminder with natural language date
-rem add "Buy groceries" --list Personal --due tomorrow --priority high
+- Calendar events (use `ical` if available, or AppleScript with Calendar.app)
+- Other Apple apps (Notes, Messages, Mail)
+- Non-macOS platforms (rem is macOS-only; fail gracefully if on Linux)
 
-# List incomplete reminders in a list
-rem list --list Work --incomplete
+## Quick decision tree
 
-# Search across all reminders
-rem search "meeting"
+| User intent | Command to reach for |
+|---|---|
+| "what's on my plate" / "today" / "what's overdue" | `rem today`, `rem overdue`, `rem upcoming --days N` |
+| "remind me to X (tomorrow / friday / etc)" | `rem add "X" --due <date>` |
+| "remind me about X at Y time" | `rem add "X" --due "<date> <time>"` — notification is automatic |
+| "make that one silent / no notification" | add `--silent` to `rem add` |
+| "mark X as done" | `rem complete <short-id>` |
+| "undo that / mark X as not done" | `rem uncomplete <short-id>` |
+| "delete X" | `rem delete <short-id>` (supports multiple IDs) |
+| "find reminders about X" | `rem search "X"` |
+| "flag / unflag X" | `rem flag <short-id>` or `rem unflag <short-id>` |
+| "show me flagged stuff" | `rem list --flagged` |
+| "move X to list Y" | `rem update <short-id> --list "Y"` |
+| "what lists do I have" | `rem lists` (add `--count` for per-list totals) |
+| "how many reminders total / stats" | `rem stats` |
+| "export my Work list" | `rem export --list Work --format json --output-file work.json` |
+| "import this CSV" | `rem import file.csv --dry-run` first, then without |
 
-# Complete a reminder by short ID
-rem complete abc12345
+For full flag details on any command, load [references/commands.md](references/commands.md).
 
-# View stats
-rem stats
-```
+## Output formats (always set one when scripting)
 
-## Command Reference
-
-### Reminder CRUD
-
-| Command | Aliases | Description |
-|---------|---------|-------------|
-| `rem add` | `create`, `new` | Create a reminder |
-| `rem list` | `ls` | List reminders with filters |
-| `rem show` | `get` | Show full details of one reminder |
-| `rem update` | `edit` | Update reminder properties |
-| `rem delete` | `rm`, `remove` | Delete a reminder |
-| `rem complete` | `done` | Mark reminder complete |
-| `rem uncomplete` | — | Mark reminder incomplete |
-| `rem flag` | — | Flag a reminder |
-| `rem unflag` | — | Remove flag |
-
-### List Management
-
-| Command | Aliases | Description |
-|---------|---------|-------------|
-| `rem lists` | — | Show all lists |
-| `rem list-mgmt create` | `lm new` | Create a list |
-| `rem list-mgmt rename` | — | Rename a list |
-| `rem list-mgmt delete` | `lm rm` | Delete a list |
-
-### Search & Analytics
-
-| Command | Description |
-|---------|-------------|
-| `rem search <query>` | Search title and notes |
-| `rem stats` | Show statistics and per-list breakdown |
-| `rem today` | Show today's due and overdue reminders |
-| `rem overdue` | Show overdue reminders |
-| `rem upcoming` | Show reminders due in next N days (default: 7) |
-
-### Import/Export
-
-| Command | Description |
-|---------|-------------|
-| `rem export` | Export to JSON or CSV |
-| `rem import <file>` | Import from JSON or CSV file |
-
-### Skills & Other
-
-| Command | Description |
-|---------|-------------|
-| `rem skills install` | Install rem skill for AI agents |
-| `rem skills uninstall` | Uninstall rem skill from AI agents |
-| `rem skills status` | Show skill installation status |
-| `rem interactive` / `rem i` | Interactive menu-driven mode |
-| `rem version` | Print version |
-| `rem completion` | Generate shell completions (bash/zsh/fish) |
-
-For full flag details on every command, see [references/commands.md](references/commands.md).
-
-## Key Concepts
-
-### Short IDs
-
-Reminders have UUIDs like `x-apple-reminder://AB12CD34-...`. The CLI displays the first 8 characters as a short ID (`AB12CD34`). You can pass any unique prefix to commands — `rem complete AB1` works if it matches exactly one reminder.
-
-### Natural Language Dates
-
-The `--due` flag accepts natural language:
+Every read command supports `-o table|json|plain`. Default is `table` (colored ASCII). When piping to another tool, into a script, or when you need to parse the result, use `-o json`:
 
 ```bash
-rem add "Call dentist" --due tomorrow
-rem add "Submit report" --due "next friday at 2pm"
-rem add "Quick task" --due "in 30 minutes"
-rem add "Wrap up" --due eod
-```
-
-Supported patterns: `today`, `tomorrow`, `next monday`, `in 3 hours`, `eod`, `eow`, `5pm`, `2026-02-15`, and more. See [references/dates.md](references/dates.md) for the full list.
-
-### Priority Levels
-
-| Level | Flag value | AppleScript value |
-|-------|-----------|-------------------|
-| High | `--priority high` | 1 (range 1-4) |
-| Medium | `--priority medium` | 5 |
-| Low | `--priority low` | 9 (range 6-9) |
-| None | `--priority none` | 0 |
-
-### Output Formats
-
-All read commands support `-o` / `--output`:
-
-- **table** (default) — formatted table with borders
-- **json** — machine-readable JSON
-- **plain** — simple text, one item per line
-
-The `NO_COLOR` environment variable is respected.
-
-### Notifications and alarms
-
-When a reminder is created with `--due`, rem auto-attaches an alarm at the due time so the system actually fires a notification — matching Apple Reminders.app default behavior. This replaces an earlier footgun where `rem add --due X` produced a silent reminder with no alert.
-
-- **Default**: `rem add "X" --due tomorrow` — notifies at the due time
-- **Custom offset**: `rem add "X" --due tomorrow --remind-me 15m` — notifies 15 minutes before
-- **Absolute time**: `rem add "X" --due tomorrow --remind-me "tomorrow at 8am"` — notifies at the absolute time
-- **Silent**: `rem add "X" --due tomorrow --silent` — sets a due date but no alert (checklist-style)
-
-Do NOT pass `--remind-me 0m` just to "enable notifications" — that's now the default when `--due` is set.
-
-### URL field
-
-URLs set via `--url` are stored in the real Reminders.app URL field (the one that shows in the UI with a link card), not in the notes. This requires go-eventkit v0.5.0+, which writes via the native `REMURLAttachment` path under the hood.
-
-- `rem add "X" --url https://github.com/...` — URL shows in Reminders.app with link preview
-- `rem update <id> --url https://other.com` — replaces the URL
-- `rem update <id> --url ""` — clears the URL
-
-Old reminders with URLs stored in the notes body (`URL: https://...`) still read correctly as a backward compatibility fallback.
-
-## Common Workflows
-
-### Daily review
-```bash
-rem overdue                          # Check what's past due
-rem upcoming --days 1                # See today's reminders
-rem list --list Work --incomplete    # Focus on work items
-```
-
-### Batch operations with JSON
-```bash
-rem export --list Work --format json > backup.json
-rem import backup.json --list "Work Archive"
-```
-
-### Scripting with JSON output
-```bash
-# Get overdue count
+rem today -o json | jq '.[] | .name'
 rem overdue -o json | jq 'length'
-
-# List all incomplete reminder titles
-rem list --incomplete -o json | jq -r '.[].name'
+rem list --incomplete --list Work -o json
 ```
 
-## Public Go API
+`NO_COLOR=1` disables colors. `REM_NO_UPDATE_CHECK=1` disables the background update check (set it when scripting to avoid stray output).
 
-For programmatic access, use [`go-eventkit`](https://github.com/BRO3886/go-eventkit) directly:
+## Short IDs
 
-```go
-import "github.com/BRO3886/go-eventkit/reminders"
+rem displays the first 8 characters of each reminder's UUID as its "short ID" (e.g. `AB12CD34`). You can pass any unique prefix to commands — `rem complete AB1` works as long as it matches exactly one reminder. Prefer short IDs when showing reminder IDs back to the user.
 
-client, _ := reminders.New()
-r, _ := client.CreateReminder(reminders.CreateReminderInput{
-    Title:    "Buy milk",
-    ListName: "Shopping",
-    Priority: reminders.PriorityHigh,
-})
-items, _ := client.Reminders(reminders.WithCompleted(false))
+## Notifications default to ON (important behavior change in v0.10.0)
+
+When `--due` is set on `rem add`, rem auto-attaches an alarm at the due time by default. This matches Apple Reminders.app behavior. **Do NOT pass `--remind-me 0m` just to enable notifications — that's now the default.**
+
+- `rem add "Review PR" --due tomorrow` → notifies at tomorrow 9 AM (default due time)
+- `rem add "Review PR" --due "tomorrow 2pm" --remind-me 15m` → notifies 15 minutes before
+- `rem add "Groceries" --due tomorrow --silent` → due date, no notification (checklist-style)
+
+Full detail: [references/commands.md](references/commands.md) `rem add` section.
+
+## URLs go in the native Reminders.app URL field
+
+When the user wants a link attached to a reminder, pass it via `--url`. rem writes to the real Reminders.app URL field (not the notes body), so the link shows in the Reminders.app UI with Apple's native link card rendering. Clear a URL with `--url ""`.
+
+```bash
+rem add "Review spec" --due friday --url https://example.com/spec.pdf
+rem update AB12 --url https://github.com/org/repo/pull/42
+rem update AB12 --url ""    # clear
 ```
 
-See [go-eventkit docs](https://github.com/BRO3886/go-eventkit) for the full API surface.
+## Critical gotchas
 
-## Limitations
+1. **macOS only.** rem uses EventKit via cgo. Will fail on Linux — detect OS first if you're unsure.
+2. **Priority mapping is non-linear.** `--priority high` = 1, `medium` = 5, `low` = 9. Don't pass raw integers from user input; use the words.
+3. **`--due none` clears** the due date in `rem update`. Same for `--remind-me none` and `--repeat none`.
+4. **The `--flagged` filter is slower (~3–4s)** because EventKit doesn't expose the flagged property, so rem falls back to JXA for that filter only. All other operations are sub-200ms.
+5. **`rem delete` prompts by default.** Pass `--force` / `--yes` / `-y` when scripting to skip the confirmation.
+6. **`rem add -i` (interactive form) has no `--silent` equivalent.** If a user wants a silent reminder via the interactive flow, create it normally and then run `rem update <id> --remind-me none` to clear the alarm.
+7. **Old reminders with URLs in the notes body** (`URL: https://...`) still read correctly as a backward-compat fallback. New reminders always use the native URL field.
 
-- **macOS only** — requires EventKit framework and `osascript`
-- **No tags or subtasks** — not exposed by EventKit/AppleScript
-- **Recurrence via `--repeat`** — supports daily, weekly (with day selection), monthly (with day-of-month selection), yearly. Use `--repeat none` to clear
-- **`--flagged` filter is slower** (~3-4s) — falls back to JXA since EventKit doesn't expose flagged
-- **List deletion** may fail on some macOS versions
+## Reference files (load when needed)
+
+- **[references/commands.md](references/commands.md)** — Complete flag reference for every rem command. Load when you need specific flag details, default values, or full usage examples.
+- **[references/dates.md](references/dates.md)** — Natural language date grammar accepted by `--due`, `--due-before`, `--due-after`, and `--remind-me`. Load when constructing a date string from a user's phrasing.
+
+## Common patterns
+
+### Daily briefing
+```bash
+rem overdue -o plain
+rem today -o plain
+rem upcoming --days 3 -o plain
+```
+
+### Scripted cleanup
+```bash
+# Archive completed Work items to a JSON backup
+rem export --list Work --format json --output-file work-$(date +%Y%m%d).json
+
+# Count overdue items
+rem overdue -o json | jq 'length'
+```
+
+### Quick capture from a user message
+When the user says something like "remind me to call mom tomorrow at 5pm", parse the title, due date, and list (if mentioned) and run a single `rem add`:
+
+```bash
+rem add "Call mom" --due "tomorrow at 5pm" --list Personal
+```
+
+Always confirm the short ID of the created reminder back to the user so they can reference it later.

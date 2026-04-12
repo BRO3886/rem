@@ -60,6 +60,8 @@ rem list
 rem add "Review pull request" --due tomorrow --priority high --list Work
 ```
 
+When `--due` is set, rem automatically attaches an alarm at the due time so you actually get a notification. Use `--remind-me 15m` for a custom offset before the due time, or `--silent` to skip the alarm entirely.
+
 ### Use natural language dates
 
 ```bash

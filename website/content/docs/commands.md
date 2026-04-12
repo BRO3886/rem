@@ -1,6 +1,6 @@
 ---
 title: "Commands"
-description: "Complete reference for all 20 rem CLI commands: rem add, rem list, rem complete, rem delete, rem update, rem search, rem stats, rem today, rem overdue, rem upcoming, rem export, rem import, rem interactive, rem lists, rem list-mgmt, rem flag, rem skills, and more."
+description: "Complete reference for every rem CLI command: rem add, rem list, rem complete, rem delete, rem update, rem search, rem stats, rem today, rem overdue, rem upcoming, rem export, rem import, rem interactive, rem lists, rem list-mgmt, rem flag, rem skills, and more."
 keywords:
   - rem CLI commands reference
   - rem add reminder terminal

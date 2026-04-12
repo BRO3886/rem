@@ -157,6 +157,8 @@ When a reminder is created with `--due`, rem auto-attaches an alarm at the due t
 
 Do NOT pass `--remind-me 0m` just to "enable notifications" — that's now the default when `--due` is set.
 
+**Interactive add (`rem add -i`)**: the TUI form has no `--silent` equivalent — any reminder created interactively with a due date will always auto-attach a notification. If you need a silent reminder via the interactive flow, create it normally and then run `rem update <id> --remind-me none` to clear the alarm.
+
 ### URL field
 
 URLs set via `--url` are stored in the real Reminders.app URL field (the one that shows in the UI with a link card), not in the notes. This requires go-eventkit v0.5.0+, which writes via the native `REMURLAttachment` path under the hood.

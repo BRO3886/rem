@@ -66,6 +66,8 @@ When --due is set on `rem add`, rem automatically attaches an alarm at the due t
 - Absolute time: `rem add "X" --due tomorrow --remind-me "tomorrow at 8am"`
 - Silent (no notification, just a due date): `rem add "X" --due tomorrow --silent`
 
+Interactive mode caveat: `rem add -i` has no --silent equivalent. Reminders created via the TUI with a due date always get an auto-alarm. To create a silent reminder via the interactive flow, create it normally then run `rem update <id> --remind-me none` to clear the alarm.
+
 Prior to go-eventkit v0.4.1 and this release, `rem add --due` produced silent reminders with no alarm — that was a bug, now fixed.
 
 

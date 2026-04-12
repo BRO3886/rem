@@ -15,6 +15,8 @@ rem add -i   # Interactive mode
 
 **Notifications.** When `--due` is set, rem auto-attaches an alarm at the due time so the system actually fires a notification — matching Apple Reminders.app default behavior. Override the timing with `--remind-me` (e.g. `--remind-me 15m` for 15 minutes before), or suppress the auto-alarm entirely with `--silent` for checklist-style reminders. Do NOT pass `--remind-me 0m` just to enable notifications — that's the default when `--due` is set.
 
+**Interactive mode caveat.** `rem add -i` has no `--silent` equivalent. Reminders created interactively with a due date always get an auto-alarm. If you need a silent reminder via the TUI, create it normally and then run `rem update <id> --remind-me none` to clear the alarm.
+
 **URLs.** `--url` writes to the real Reminders.app URL field (via the native `REMURLAttachment` path, requires go-eventkit v0.5.0+). URLs set this way show up with Apple's native link card rendering in the Reminders.app UI.
 
 | Flag | Short | Description | Default |

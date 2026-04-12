@@ -58,6 +58,8 @@ rem add "Ship demo" --url https://github.com/BRO3886/rem/pull/24
 | `--repeat` | Set recurrence: `daily`, `weekly`, `monthly`, `yearly`, or `weekly on mon,wed,fri` |
 | `-i, --interactive` | Step-by-step interactive creation |
 
+The interactive form (`rem add -i`) has no `--silent` option. Reminders created interactively with a due date always get an auto-alarm. To create a silent reminder via the interactive flow, follow up with `rem update <id> --remind-me none` to clear the alarm.
+
 ### `rem list`
 
 List reminders with optional filters.

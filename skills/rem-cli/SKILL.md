@@ -1,7 +1,7 @@
 ---
 name: rem
 description: Create, list, update, complete, and search macOS Reminders via the rem CLI. Use when the user wants to manage Apple Reminders from the terminal, automate reminder workflows, reference reminders in shell scripts, or schedule anything on macOS.
-allowed-tools: Bash(rem *) Bash(date *)
+allowed-tools: Bash(rem *)
 argument-hint: "[natural language request]"
 ---
 
@@ -16,7 +16,7 @@ rem is a single-binary Go CLI that reads and writes the Apple Reminders database
 - Local time: !`date +"%H:%M %Z"`
 - Day of week: !`date +"%A"`
 - Tomorrow (ISO): !`date -v+1d +"%Y-%m-%d"`
-- End of week (Friday ISO): !`date -v+fri +"%Y-%m-%d"`
+- Next Friday (ISO, always forward): !`date -v+1d -v+fri +"%Y-%m-%d"`
 
 **When the user says relative dates like "tomorrow", "next friday", "end of week", or "last tuesday", resolve them against the values above before calling rem.** Don't ask the user "what is today" and don't guess from training data.
 
@@ -37,7 +37,6 @@ Do NOT use rem for:
 
 - Calendar events (use `ical` if available, or AppleScript with Calendar.app)
 - Other Apple apps (Notes, Messages, Mail)
-- Non-macOS platforms (rem is macOS-only; fail gracefully if on Linux)
 
 ## Quick decision tree
 
@@ -46,7 +45,9 @@ Do NOT use rem for:
 | "what's on my plate" / "today" / "what's overdue" | `rem today`, `rem overdue`, `rem upcoming --days N` |
 | "remind me to X (tomorrow / friday / etc)" | `rem add "X" --due <date>` |
 | "remind me about X at Y time" | `rem add "X" --due "<date> <time>"` — notification is automatic |
-| "make that one silent / no notification" | add `--silent` to `rem add` |
+| "remind me 15 minutes before" | add `--remind-me 15m` to `rem add` |
+| "make that one silent / no notification" | add `--silent` to `rem add` (not available in `-i` mode, see gotchas) |
+| "tell me more about X" / "show that reminder" | `rem show <short-id>` |
 | "mark X as done" | `rem complete <short-id>` |
 | "undo that / mark X as not done" | `rem uncomplete <short-id>` |
 | "delete X" | `rem delete <short-id>` (supports multiple IDs) |
@@ -54,6 +55,10 @@ Do NOT use rem for:
 | "flag / unflag X" | `rem flag <short-id>` or `rem unflag <short-id>` |
 | "show me flagged stuff" | `rem list --flagged` |
 | "move X to list Y" | `rem update <short-id> --list "Y"` |
+| "change priority to high" | `rem update <short-id> --priority high` |
+| "add notes to X" | `rem update <short-id> --notes "..."` |
+| "make it repeat weekly / monthly" | `rem add ... --repeat weekly` or `--repeat "weekly on mon,wed,fri"` |
+| "clear the due date on X" | `rem update <short-id> --due none` |
 | "what lists do I have" | `rem lists` (add `--count` for per-list totals) |
 | "how many reminders total / stats" | `rem stats` |
 | "export my Work list" | `rem export --list Work --format json --output-file work.json` |
@@ -77,9 +82,9 @@ rem list --incomplete --list Work -o json
 
 rem displays the first 8 characters of each reminder's UUID as its "short ID" (e.g. `AB12CD34`). You can pass any unique prefix to commands — `rem complete AB1` works as long as it matches exactly one reminder. Prefer short IDs when showing reminder IDs back to the user.
 
-## Notifications default to ON (important behavior change in v0.10.0)
+## Notifications default to ON
 
-When `--due` is set on `rem add`, rem auto-attaches an alarm at the due time by default. This matches Apple Reminders.app behavior. **Do NOT pass `--remind-me 0m` just to enable notifications — that's now the default.**
+When `--due` is set on `rem add`, rem auto-attaches an alarm at the due time. This matches Apple Reminders.app behavior. **Do NOT pass `--remind-me 0m` to enable notifications — that's already the default when `--due` is set.**
 
 - `rem add "Review PR" --due tomorrow` → notifies at tomorrow 9 AM (default due time)
 - `rem add "Review PR" --due "tomorrow 2pm" --remind-me 15m` → notifies 15 minutes before
@@ -100,7 +105,7 @@ rem update AB12 --url ""    # clear
 ## Critical gotchas
 
 1. **macOS only.** rem uses EventKit via cgo. Will fail on Linux — detect OS first if you're unsure.
-2. **Priority mapping is non-linear.** `--priority high` = 1, `medium` = 5, `low` = 9. Don't pass raw integers from user input; use the words.
+2. **Priority uses word forms, not raw numbers.** Pass `--priority high|medium|low|none`. rem does accept raw ints, but Apple's 1–9 scale is inverted (1 = highest, 9 = lowest), so the words are safer when relaying from user input.
 3. **`--due none` clears** the due date in `rem update`. Same for `--remind-me none` and `--repeat none`.
 4. **The `--flagged` filter is slower (~3–4s)** because EventKit doesn't expose the flagged property, so rem falls back to JXA for that filter only. All other operations are sub-200ms.
 5. **`rem delete` prompts by default.** Pass `--force` / `--yes` / `-y` when scripting to skip the confirmation.

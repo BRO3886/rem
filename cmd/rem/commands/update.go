@@ -63,19 +63,10 @@ var updateCmd = &cobra.Command{
 			updates["name"] = updateName
 		}
 		if cmd.Flags().Changed("notes") {
-			body := updateNotes
-			if updateURL != "" {
-				body = body + "\n\nURL: " + updateURL
-			}
-			updates["body"] = body
-		} else if cmd.Flags().Changed("url") {
-			body := r.Body
-			if body != "" {
-				body = body + "\n\nURL: " + updateURL
-			} else {
-				body = "URL: " + updateURL
-			}
-			updates["body"] = body
+			updates["body"] = updateNotes
+		}
+		if cmd.Flags().Changed("url") {
+			updates["url"] = updateURL
 		}
 		if cmd.Flags().Changed("due") {
 			if updateDue == "" || updateDue == "none" {
@@ -284,17 +275,7 @@ func runUpdateInteractive(idArg string) error {
 		updates["body"] = notes
 	}
 	if url != r.URL {
-		if notes == r.Body {
-			// URL changed but notes didn't — update body with new URL
-			body := r.Body
-			if body != "" {
-				body = body + "\n\nURL: " + url
-			} else if url != "" {
-				body = "URL: " + url
-			}
-			updates["body"] = body
-		}
-		// If notes also changed, the URL will need to be in the notes
+		updates["url"] = url
 	}
 	if listName != r.ListName {
 		updates["list"] = listName

@@ -28,7 +28,7 @@ sudo mv rem /usr/local/bin/rem
 
 ## Commands (all 20)
 
-rem add "title" [--due DATE] [--priority high|medium|low|none] [--list NAME] [--notes TEXT] [--url URL] [--flagged] [--remind-me DURATION] [--repeat PATTERN] [-i]
+rem add "title" [--due DATE] [--priority high|medium|low|none] [--list NAME] [--notes TEXT] [--url URL] [--flagged] [--remind-me DURATION] [--silent] [--repeat PATTERN] [-i]
 rem list [--list NAME] [--incomplete] [--completed] [--flagged] [--due-before DATE] [--due-after DATE] [-s QUERY]
 rem show ID
 rem update ID [--name TEXT] [--due DATE] [--priority LEVEL] [--notes TEXT] [--url URL] [--flagged true|false] [--remind-me DURATION] [--repeat PATTERN] [--list NAME] [-i]
@@ -55,6 +55,32 @@ rem skills status
 rem version
 
 Global flags: -o table|json|plain, --no-color, -h
+
+
+## Notifications (--due auto-attaches alarms)
+
+When --due is set on `rem add`, rem automatically attaches an alarm at the due time so the system fires a notification — matching Apple Reminders.app default behavior. This is the default. You do NOT need to also pass --remind-me 0m to enable notifications.
+
+- Default: `rem add "X" --due tomorrow` → notifies at the due time
+- Custom offset: `rem add "X" --due tomorrow --remind-me 15m` → notifies 15 minutes before
+- Absolute time: `rem add "X" --due tomorrow --remind-me "tomorrow at 8am"`
+- Silent (no notification, just a due date): `rem add "X" --due tomorrow --silent`
+
+Interactive mode caveat: `rem add -i` has no --silent equivalent. Reminders created via the TUI with a due date always get an auto-alarm. To create a silent reminder via the interactive flow, create it normally then run `rem update <id> --remind-me none` to clear the alarm.
+
+Prior to go-eventkit v0.4.1 and this release, `rem add --due` produced silent reminders with no alarm — that was a bug, now fixed.
+
+
+## URL field (--url writes to native Reminders.app field)
+
+`--url` writes to the real URL field shown in the Reminders.app UI, not to the notes body. URLs set this way appear with Apple's native link card rendering (favicon, site name). Requires go-eventkit v0.5.0+, which uses the native REMURLAttachment path under the hood.
+
+- Set: `rem add "X" --url https://github.com/org/repo/pull/42`
+- Update: `rem update ID --url https://new.com`
+- Clear: `rem update ID --url ""`
+- Read: `rem show ID -o json` returns the URL in the `url` field
+
+Old reminders with URLs stored in the notes body (`URL: https://...`) still read correctly as a backward compatibility fallback.
 
 
 ## Natural Language Date Formats

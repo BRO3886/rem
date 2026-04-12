@@ -2,6 +2,7 @@ package commands
 
 import (
 	"testing"
+	"time"
 
 	"github.com/BRO3886/rem/internal/reminder"
 )
@@ -242,4 +243,110 @@ func TestUnflagFilter(t *testing.T) {
 			t.Errorf("expected ListName=Personal, got %q", f.ListName)
 		}
 	})
+}
+
+func TestBuildAlarms(t *testing.T) {
+	t.Run("no due date, no remind-me: no alarms", func(t *testing.T) {
+		alarms, err := buildAlarms(false, "", false)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if alarms != nil {
+			t.Errorf("expected nil alarms, got %v", alarms)
+		}
+	})
+
+	t.Run("due date, no remind-me, not silent: auto-attach zero offset", func(t *testing.T) {
+		alarms, err := buildAlarms(true, "", false)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(alarms) != 1 {
+			t.Fatalf("expected 1 alarm, got %d", len(alarms))
+		}
+		if alarms[0].RelativeOffset != 0 {
+			t.Errorf("expected zero offset, got %v", alarms[0].RelativeOffset)
+		}
+		if alarms[0].AbsoluteDate != nil {
+			t.Errorf("expected no absolute date, got %v", alarms[0].AbsoluteDate)
+		}
+	})
+
+	t.Run("due date with --silent: no alarms", func(t *testing.T) {
+		alarms, err := buildAlarms(true, "", true)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if alarms != nil {
+			t.Errorf("expected nil alarms when --silent, got %v", alarms)
+		}
+	})
+
+	t.Run("remind-me wins over silent (explicit user intent)", func(t *testing.T) {
+		alarms, err := buildAlarms(true, "15m", true)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(alarms) != 1 {
+			t.Fatalf("expected 1 alarm, got %d", len(alarms))
+		}
+		// 15m before due → -15m offset
+		if alarms[0].RelativeOffset != -15*time.Minute {
+			t.Errorf("expected -15m offset, got %v", alarms[0].RelativeOffset)
+		}
+	})
+
+	t.Run("remind-me 0m matches auto-attach behavior", func(t *testing.T) {
+		auto, _ := buildAlarms(true, "", false)
+		explicit, _ := buildAlarms(true, "0m", false)
+		if len(auto) != 1 || len(explicit) != 1 {
+			t.Fatalf("both should produce 1 alarm: auto=%v explicit=%v", auto, explicit)
+		}
+		if auto[0].RelativeOffset != explicit[0].RelativeOffset {
+			t.Errorf("auto offset=%v, explicit 0m offset=%v — should match",
+				auto[0].RelativeOffset, explicit[0].RelativeOffset)
+		}
+	})
+
+	t.Run("remind-me without due date still works", func(t *testing.T) {
+		// Edge case: user passes --remind-me but no --due. The remind-me
+		// alarm should still attach (the service layer will reject it if
+		// the combination is invalid at the EventKit level).
+		alarms, err := buildAlarms(false, "1h", false)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(alarms) != 1 {
+			t.Fatalf("expected 1 alarm, got %d", len(alarms))
+		}
+		if alarms[0].RelativeOffset != -1*time.Hour {
+			t.Errorf("expected -1h offset, got %v", alarms[0].RelativeOffset)
+		}
+	})
+
+	t.Run("invalid remind-me surfaces the parse error", func(t *testing.T) {
+		_, err := buildAlarms(true, "not a duration or date", false)
+		if err == nil {
+			t.Fatal("expected error for invalid remind-me")
+		}
+	})
+
+	t.Run("absolute remind-me time", func(t *testing.T) {
+		alarms, err := buildAlarms(true, "tomorrow at 9am", false)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(alarms) != 1 {
+			t.Fatalf("expected 1 alarm, got %d", len(alarms))
+		}
+		if alarms[0].AbsoluteDate == nil {
+			t.Errorf("expected absolute date alarm, got %+v", alarms[0])
+		}
+		if alarms[0].RelativeOffset != 0 {
+			t.Errorf("absolute alarm should not have a relative offset, got %v", alarms[0].RelativeOffset)
+		}
+	})
+
+	// Silence the unused import warning if reminder package stops being referenced.
+	_ = reminder.Alarm{}
 }

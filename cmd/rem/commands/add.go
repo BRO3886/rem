@@ -20,6 +20,7 @@ var (
 	addRemindMe    string
 	addRepeat      string
 	addInteractive bool
+	addSilent      bool
 )
 
 var addCmd = &cobra.Command{
@@ -59,13 +60,11 @@ var addCmd = &cobra.Command{
 			r.DueDate = &dueDate
 		}
 
-		if addRemindMe != "" {
-			alarm, err := parseAlarm(addRemindMe)
-			if err != nil {
-				return err
-			}
-			r.Alarms = []reminder.Alarm{alarm}
+		alarms, err := buildAlarms(r.DueDate != nil, addRemindMe, addSilent)
+		if err != nil {
+			return err
 		}
+		r.Alarms = alarms
 
 		if addRepeat != "" {
 			rule, err := parseRecurrence(addRepeat)
@@ -100,6 +99,7 @@ func init() {
 	addCmd.Flags().BoolVarP(&addFlagged, "flagged", "f", false, "Flag the reminder")
 	addCmd.Flags().StringVar(&addRemindMe, "remind-me", "", "Set alarm: duration before due (15m, 1h, 2d) or absolute time")
 	addCmd.Flags().StringVar(&addRepeat, "repeat", "", "Set recurrence: daily, weekly, 'weekly on mon,wed,fri', monthly, yearly")
+	addCmd.Flags().BoolVar(&addSilent, "silent", false, "Don't auto-attach an alarm when --due is set")
 	addCmd.Flags().BoolVarP(&addInteractive, "interactive", "i", false, "Create reminder interactively")
 
 	rootCmd.AddCommand(addCmd)

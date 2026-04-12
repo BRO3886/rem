@@ -42,7 +42,7 @@ type JSONReminder struct {
 	URL              string               `json:"url,omitempty"`
 	Recurring        bool                 `json:"recurring,omitempty"`
 	RecurrenceRules  []JSONRecurrenceRule `json:"recurrence_rules,omitempty"`
-	Alarms           []JSONAlarm          `json:"alarms,omitempty"`
+	Alarms           []JSONAlarm          `json:"alarms"`
 }
 
 const timeFormat = "2006-01-02T15:04:05"
@@ -88,6 +88,7 @@ func ToJSON(r *reminder.Reminder) JSONReminder {
 		Completed:        r.Completed,
 		URL:              r.URL,
 		Recurring:        r.Recurring,
+		Alarms:           []JSONAlarm{},
 	}
 
 	for _, rule := range r.RecurrenceRules {

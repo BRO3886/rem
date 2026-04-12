@@ -183,6 +183,14 @@ func runAddInteractive() error {
 			r.DueDate = &dueDate
 		}
 	}
+	// Interactive mode has no --silent/--remind-me equivalents yet, so the
+	// default "alarm at due time" behavior always applies when a due date was
+	// entered. Uses the same helper as the non-interactive path.
+	alarms, err := buildAlarms(r.DueDate != nil, "", false)
+	if err != nil {
+		return err
+	}
+	r.Alarms = alarms
 
 	id, err := reminderSvc.CreateReminder(r)
 	if err != nil {

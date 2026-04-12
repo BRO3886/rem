@@ -2,6 +2,7 @@ package export
 
 import (
 	"bytes"
+	"encoding/json"
 	"strings"
 	"testing"
 	"time"
@@ -53,6 +54,43 @@ func TestExportJSON(t *testing.T) {
 	}
 	if !strings.Contains(output, "https://github.com/example") {
 		t.Error("JSON output should contain URL")
+	}
+	// The alarms field must always be present (as [] when empty) so tools
+	// consuming the JSON can distinguish "no alarms" from "field missing".
+	// Neither sample reminder has alarms, so both should serialize "alarms": [].
+	if !strings.Contains(output, `"alarms": []`) {
+		t.Errorf("JSON output should always include empty alarms array, got:\n%s", output)
+	}
+	if strings.Contains(output, `"alarms": null`) {
+		t.Error("alarms should serialize as [] not null")
+	}
+}
+
+// TestToJSONAlarmsAlwaysPresent pins the behavior directly on ToJSON (not via
+// the ExportJSON wrapper) so a future change that removes the initialization
+// of Alarms to [] in ToJSON gets caught.
+func TestToJSONAlarmsAlwaysPresent(t *testing.T) {
+	r := &reminder.Reminder{
+		ID:       "empty-alarms",
+		Name:     "No alarms",
+		ListName: "Test",
+		// Alarms intentionally nil
+	}
+	jr := ToJSON(r)
+	if jr.Alarms == nil {
+		t.Fatal("ToJSON should initialize Alarms to [] not leave it nil")
+	}
+	if len(jr.Alarms) != 0 {
+		t.Errorf("expected empty slice, got %d entries", len(jr.Alarms))
+	}
+
+	// Round-trip through JSON and verify the field is present.
+	data, err := json.Marshal(jr)
+	if err != nil {
+		t.Fatalf("json.Marshal: %v", err)
+	}
+	if !strings.Contains(string(data), `"alarms":[]`) {
+		t.Errorf("alarms field missing or not empty array in: %s", string(data))
 	}
 }
 

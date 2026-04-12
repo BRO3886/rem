@@ -60,15 +60,11 @@ var addCmd = &cobra.Command{
 			r.DueDate = &dueDate
 		}
 
-		if addRemindMe != "" {
-			alarm, err := parseAlarm(addRemindMe)
-			if err != nil {
-				return err
-			}
-			r.Alarms = []reminder.Alarm{alarm}
-		} else if r.DueDate != nil && !addSilent {
-			r.Alarms = []reminder.Alarm{{RelativeOffset: 0}}
+		alarms, err := buildAlarms(r.DueDate != nil, addRemindMe, addSilent)
+		if err != nil {
+			return err
 		}
+		r.Alarms = alarms
 
 		if addRepeat != "" {
 			rule, err := parseRecurrence(addRepeat)

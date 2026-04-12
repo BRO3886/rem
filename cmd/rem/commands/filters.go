@@ -22,8 +22,12 @@ func parseDate(input string) (time.Time, error) {
 }
 
 // parseAlarm parses an alarm specification. Supports:
-//   - Relative offsets: "15m", "1h", "2d", "0" (at time of event)
+//   - Relative offsets: "0m", "15m", "1h", "2d" (before the due date)
 //   - Absolute times: any input parseable by parseDate (e.g., "tomorrow at 9am")
+//
+// Note: a bare "0" (without a unit) is not accepted — use "0m" for an alarm
+// at the due time. That's also the default when --due is set and --remind-me
+// is not, so passing "0m" explicitly is rarely needed.
 func parseAlarm(input string) (reminder.Alarm, error) {
 	// Try relative offset first (e.g., "15m", "1h", "2d")
 	if d, err := dateparser.ParseAlertDuration(input); err == nil {
@@ -36,6 +40,32 @@ func parseAlarm(input string) (reminder.Alarm, error) {
 		return reminder.Alarm{}, fmt.Errorf("invalid alarm: %q — use a duration (15m, 1h, 2d) or a date/time", input)
 	}
 	return reminder.Alarm{AbsoluteDate: &t}, nil
+}
+
+// buildAlarms decides which alarms to attach to a new reminder based on the
+// --due, --remind-me, and --silent flag values. The decision rules are:
+//
+//  1. If --remind-me is explicitly set, always use that alarm (overrides
+//     --silent; an explicit request from the user wins).
+//  2. Else if --due is set AND --silent is not, attach a zero-offset alarm
+//     (fire at the due time). This matches Apple Reminders.app's default
+//     behavior when you create a reminder with a date in the UI.
+//  3. Otherwise, no alarms.
+//
+// Extracted from the RunE closure in add.go so the decision logic is unit
+// testable independent of Cobra plumbing and the service layer.
+func buildAlarms(hasDueDate bool, remindMe string, silent bool) ([]reminder.Alarm, error) {
+	if remindMe != "" {
+		a, err := parseAlarm(remindMe)
+		if err != nil {
+			return nil, err
+		}
+		return []reminder.Alarm{a}, nil
+	}
+	if hasDueDate && !silent {
+		return []reminder.Alarm{{RelativeOffset: 0}}, nil
+	}
+	return nil, nil
 }
 
 // weekdayNum maps day name strings to eventkit weekday numbers (1=Sun..7=Sat).

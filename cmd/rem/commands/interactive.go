@@ -181,9 +181,16 @@ func runAddInteractive() error {
 			fmt.Fprintf(os.Stderr, "Warning: could not parse due date '%s': %v\n", dueStr, err)
 		} else {
 			r.DueDate = &dueDate
-			r.Alarms = []reminder.Alarm{{RelativeOffset: 0}}
 		}
 	}
+	// Interactive mode has no --silent/--remind-me equivalents yet, so the
+	// default "alarm at due time" behavior always applies when a due date was
+	// entered. Uses the same helper as the non-interactive path.
+	alarms, err := buildAlarms(r.DueDate != nil, "", false)
+	if err != nil {
+		return err
+	}
+	r.Alarms = alarms
 
 	id, err := reminderSvc.CreateReminder(r)
 	if err != nil {

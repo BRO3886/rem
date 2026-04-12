@@ -1,8 +1,13 @@
 ---
-name: rem
+name: rem-cli
 description: Create, list, update, complete, and search macOS Reminders via the rem CLI. Use when the user wants to manage Apple Reminders from the terminal, automate reminder workflows, reference reminders in shell scripts, or schedule anything on macOS.
+license: MIT
+compatibility: Requires macOS with the rem CLI installed (https://rem.sidv.dev)
 allowed-tools: Bash(rem *)
 argument-hint: "[natural language request]"
+metadata:
+  author: BRO3886
+  homepage: https://github.com/BRO3886/rem
 ---
 
 # rem — macOS Reminders from the terminal

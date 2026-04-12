@@ -120,7 +120,7 @@ internal/
 │   ├── executor.go        # Runs osascript (flagged ops, default list name)
 │   ├── reminders.go       # ReminderService wrapping go-eventkit
 │   ├── lists.go           # ListService wrapping go-eventkit
-│   └── parser.go          # URL extraction from notes
+│   └── parser.go          # Backward-compat URL extraction from notes body (fallback reader)
 │
 ├── reminder/              # Domain models
 │   └── model.go           # Reminder, List, Priority types
@@ -135,14 +135,15 @@ internal/
 
 ## Dependencies
 
-rem uses four external Go dependencies:
+rem uses five external Go dependencies:
 
 | Package | Purpose |
 |---------|---------|
-| `BRO3886/go-eventkit` | Native EventKit bindings (cgo + ObjC, reads AND writes) |
+| `BRO3886/go-eventkit` v0.5.0+ | Native EventKit bindings (cgo + ObjC, reads AND writes). Includes the private ReminderKit bridge for the native URL field. |
 | `spf13/cobra` | CLI framework (commands, flags, help) |
 | `olekukonko/tablewriter` | Terminal table formatting |
 | `fatih/color` | Terminal colors |
+| `charmbracelet/huh` | Interactive forms for all `-i` modes |
 
 System frameworks linked via cgo (through go-eventkit):
 

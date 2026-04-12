@@ -12,6 +12,6 @@
 ## Documentation
 
 - [Getting Started](https://rem.sidv.dev/docs/getting-started/): Install rem, quick start, shell completions, AI agent skills
-- [Commands](https://rem.sidv.dev/docs/commands/): All 19 CLI commands with flags and examples
+- [Commands](https://rem.sidv.dev/docs/commands/): Complete CLI command reference with flags and examples
 - [Architecture](https://rem.sidv.dev/docs/architecture/): How rem uses go-eventkit + EventKit via cgo
 - [Performance](https://rem.sidv.dev/docs/performance/): Benchmarks, 462x speedup over AppleScript, optimization story

@@ -68,7 +68,7 @@ When --due is set on `rem add`, rem automatically attaches an alarm at the due t
 
 Interactive mode caveat: `rem add -i` has no --silent equivalent. Reminders created via the TUI with a due date always get an auto-alarm. To create a silent reminder via the interactive flow, create it normally then run `rem update <id> --remind-me none` to clear the alarm.
 
-Prior to go-eventkit v0.4.1 and this release, `rem add --due` produced silent reminders with no alarm — that was a bug, now fixed.
+Prior to rem v0.10.0, `rem add --due` produced silent reminders with no alarm because rem didn't auto-attach one and the zero-offset marshaling in go-eventkit (fixed in v0.4.1) was broken. Both issues are now resolved — notifications fire reliably.
 
 
 ## URL field (--url writes to native Reminders.app field)
@@ -100,9 +100,10 @@ rem understands these date patterns (used with --due and --remind-me):
 
 ## Architecture
 
-rem uses go-eventkit (github.com/BRO3886/go-eventkit v0.4.0) for ALL reads and writes:
+rem uses go-eventkit (github.com/BRO3886/go-eventkit v0.5.0+) for ALL reads and writes:
 - Reminder CRUD: create, read, update, delete, complete/uncomplete via EventKit
 - List CRUD: create, rename, delete via EventKit
+- URL field: native REMURLAttachment via private ReminderKit framework (shows in Reminders.app UI)
 - Performance: <200ms for all EventKit operations
 - AppleScript fallback only for: flag/unflag operations, default list name query (EventKit doesn't expose isFlagged)
 

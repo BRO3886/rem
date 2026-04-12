@@ -9,8 +9,13 @@ rem add "Buy groceries" --list Personal --due tomorrow --priority high
 rem add "Review PR" --due "next friday at 2pm" --url https://github.com/org/repo/pull/123
 rem add "Call dentist" --notes "Ask about cleaning"
 rem add "Meeting" --due "tomorrow at 10am" --remind-me 15m
+rem add "Silent checklist item" --due tomorrow --silent   # due date, no notification
 rem add -i   # Interactive mode
 ```
+
+**Notifications.** When `--due` is set, rem auto-attaches an alarm at the due time so the system actually fires a notification — matching Apple Reminders.app default behavior. Override the timing with `--remind-me` (e.g. `--remind-me 15m` for 15 minutes before), or suppress the auto-alarm entirely with `--silent` for checklist-style reminders. Do NOT pass `--remind-me 0m` just to enable notifications — that's the default when `--due` is set.
+
+**URLs.** `--url` writes to the real Reminders.app URL field (via the native `REMURLAttachment` path, requires go-eventkit v0.5.0+). URLs set this way show up with Apple's native link card rendering in the Reminders.app UI.
 
 | Flag | Short | Description | Default |
 |------|-------|-------------|---------|
@@ -18,9 +23,10 @@ rem add -i   # Interactive mode
 | `--due` | `-d` | Due date (natural language or ISO) | None |
 | `--priority` | `-p` | Priority: high, medium, low, none | none |
 | `--notes` | `-n` | Notes/body text | Empty |
-| `--url` | `-u` | URL to attach | None |
+| `--url` | `-u` | URL to attach (shows in Reminders.app URL field) | None |
 | `--flagged` | `-f` | Flag the reminder | false |
-| `--remind-me` | — | Set alarm: duration before due (15m, 1h, 2d) or absolute time | None |
+| `--remind-me` | — | Custom alarm: duration before due (15m, 1h, 2d) or absolute time | Auto: at due time when `--due` is set |
+| `--silent` | — | Don't auto-attach an alarm when `--due` is set | false |
 | `--repeat` | — | Set recurrence: daily, weekly, monthly, yearly, or 'weekly on mon,wed,fri' | None |
 | `--interactive` | `-i` | Create interactively | false |
 
@@ -86,8 +92,12 @@ rem update abc12345 --due none    # Clear due date
 rem update abc12345 --flagged true
 rem update abc12345 --list "Work"  # Move to a different list
 rem update abc12345 --remind-me 15m
+rem update abc12345 --url https://github.com/org/repo/pull/42
+rem update abc12345 --url ""      # Clear URL
 rem update abc12345 -i            # Interactive mode
 ```
+
+**URLs.** `--url` writes to the native Reminders.app URL field (not notes/body). Pass `--url ""` to clear the URL.
 
 | Flag | Short | Description | Default |
 |------|-------|-------------|---------|
@@ -96,7 +106,7 @@ rem update abc12345 -i            # Interactive mode
 | `--due` | `-d` | New due date (use `none` to clear) | — |
 | `--notes` | `-n` | New notes/body | — |
 | `--priority` | `-p` | New priority: high, medium, low, none | — |
-| `--url` | `-u` | New URL | — |
+| `--url` | `-u` | New URL (empty string to clear) | — |
 | `--flagged` | — | Set flagged: true/false | — |
 | `--remind-me` | — | Set alarm: duration (15m, 1h, 2d), 'none' to clear | — |
 | `--repeat` | — | Set recurrence: daily, weekly, monthly, yearly, 'none' to clear | — |

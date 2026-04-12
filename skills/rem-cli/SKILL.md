@@ -146,9 +146,26 @@ All read commands support `-o` / `--output`:
 
 The `NO_COLOR` environment variable is respected.
 
-### URL Storage
+### Notifications and alarms
 
-URLs are stored natively via EventKit's URL field (go-eventkit v0.4.0+). For backwards compatibility, rem also extracts URLs from the notes/body field if the native field is empty.
+When a reminder is created with `--due`, rem auto-attaches an alarm at the due time so the system actually fires a notification — matching Apple Reminders.app default behavior. This replaces an earlier footgun where `rem add --due X` produced a silent reminder with no alert.
+
+- **Default**: `rem add "X" --due tomorrow` — notifies at the due time
+- **Custom offset**: `rem add "X" --due tomorrow --remind-me 15m` — notifies 15 minutes before
+- **Absolute time**: `rem add "X" --due tomorrow --remind-me "tomorrow at 8am"` — notifies at the absolute time
+- **Silent**: `rem add "X" --due tomorrow --silent` — sets a due date but no alert (checklist-style)
+
+Do NOT pass `--remind-me 0m` just to "enable notifications" — that's now the default when `--due` is set.
+
+### URL field
+
+URLs set via `--url` are stored in the real Reminders.app URL field (the one that shows in the UI with a link card), not in the notes. This requires go-eventkit v0.5.0+, which writes via the native `REMURLAttachment` path under the hood.
+
+- `rem add "X" --url https://github.com/...` — URL shows in Reminders.app with link preview
+- `rem update <id> --url https://other.com` — replaces the URL
+- `rem update <id> --url ""` — clears the URL
+
+Old reminders with URLs stored in the notes body (`URL: https://...`) still read correctly as a backward compatibility fallback.
 
 ## Common Workflows
 

@@ -34,9 +34,16 @@ Create a new reminder.
 
 ```bash
 rem add "Buy groceries" --due tomorrow --priority high --list Personal
+rem add "Review PR" --due "friday at 2pm" --remind-me 30m   # notify 30 min before
+rem add "Checklist item" --due tomorrow --silent            # due date, no notification
+rem add "Ship demo" --url https://github.com/BRO3886/rem/pull/24
 ```
 
 **Aliases:** `create`, `new`
+
+**Notifications.** When `--due` is set, rem auto-attaches an alarm at the due time so the system actually fires a notification — matching Apple Reminders.app default behavior. Use `--remind-me` to override the timing (e.g. `15m` for 15 minutes before), or `--silent` to suppress the auto-alarm entirely.
+
+**URLs.** `--url` writes to the real Reminders.app URL field (not the notes body), so URLs show up with Apple's native link card rendering in the Reminders.app UI.
 
 | Flag | Description |
 |------|-------------|
@@ -44,9 +51,10 @@ rem add "Buy groceries" --due tomorrow --priority high --list Personal
 | `-d, --due` | Due date (natural language or standard format) |
 | `-p, --priority` | Priority: `high`, `medium`, `low`, `none` |
 | `-n, --notes` | Notes/body text |
-| `-u, --url` | URL to attach |
+| `-u, --url` | URL (shows in Reminders.app URL field) |
 | `-f, --flagged` | Flag the reminder |
-| `--remind-me` | Set alarm: duration before due (`15m`, `1h`, `2d`) or absolute time |
+| `--remind-me` | Custom alarm: duration before due (`15m`, `1h`, `2d`) or absolute time |
+| `--silent` | Don't auto-attach an alarm when `--due` is set |
 | `--repeat` | Set recurrence: `daily`, `weekly`, `monthly`, `yearly`, or `weekly on mon,wed,fri` |
 | `-i, --interactive` | Step-by-step interactive creation |
 
@@ -88,9 +96,13 @@ Update an existing reminder.
 
 ```bash
 rem update 6ECE --priority medium --due "next friday"
+rem update 6ECE --url https://github.com/org/repo/pull/42
+rem update 6ECE --url ""   # clear URL
 ```
 
 **Aliases:** `edit`
+
+`--url` writes to the native Reminders.app URL field (not the notes body). Pass an empty string (`--url ""`) to clear.
 
 | Flag | Description |
 |------|-------------|
@@ -99,7 +111,7 @@ rem update 6ECE --priority medium --due "next friday"
 | `-d, --due` | New due date |
 | `-p, --priority` | New priority |
 | `-n, --notes` | New notes |
-| `-u, --url` | New URL |
+| `-u, --url` | New URL (empty string to clear) |
 | `--flagged` | Set flag: `true` or `false` |
 | `--remind-me` | Set alarm: duration (`15m`, `1h`, `2d`), `none` to clear |
 | `--repeat` | Set recurrence: `daily`, `weekly`, `monthly`, `yearly`, `none` to clear |

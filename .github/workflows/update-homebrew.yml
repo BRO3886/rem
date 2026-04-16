@@ -37,24 +37,28 @@ jobs:
 
       - name: Update formula
         run: |
-          cat > homebrew-tap/Formula/rem-cli.rb << 'FORMULA'
+          VERSION="${{ steps.release.outputs.version }}"
+          TAG="${{ github.ref_name }}"
+          ARM_SHA="${{ steps.checksums.outputs.arm64_sha }}"
+          AMD_SHA="${{ steps.checksums.outputs.amd64_sha }}"
+          cat > homebrew-tap/Formula/rem-cli.rb <<EOF
           class RemCli < Formula
             desc "Blazing fast CLI for macOS Reminders — sub-200ms reads and writes via EventKit"
             homepage "https://github.com/BRO3886/rem"
-            version "${{ steps.release.outputs.version }}"
+            version "${VERSION}"
             license "MIT"
 
             depends_on :macos
-            conflicts_with "rem", because: "both install a `rem` binary"
+            conflicts_with "rem", because: "both install a \\\`rem\\\` binary"
 
             on_arm do
-              url "https://github.com/BRO3886/rem/releases/download/${{ github.ref_name }}/rem-darwin-arm64.tar.gz"
-              sha256 "${{ steps.checksums.outputs.arm64_sha }}"
+              url "https://github.com/BRO3886/rem/releases/download/${TAG}/rem-darwin-arm64.tar.gz"
+              sha256 "${ARM_SHA}"
             end
 
             on_intel do
-              url "https://github.com/BRO3886/rem/releases/download/${{ github.ref_name }}/rem-darwin-amd64.tar.gz"
-              sha256 "${{ steps.checksums.outputs.amd64_sha }}"
+              url "https://github.com/BRO3886/rem/releases/download/${TAG}/rem-darwin-amd64.tar.gz"
+              sha256 "${AMD_SHA}"
             end
 
             def install
@@ -62,11 +66,10 @@ jobs:
             end
 
             test do
-              assert_match version.to_s, shell_output("#{bin}/rem version")
+              assert_match version.to_s, shell_output("\#{bin}/rem version")
             end
           end
-          FORMULA
-          # Fix indentation - remove leading spaces from heredoc
+          EOF
           sed -i 's/^          //' homebrew-tap/Formula/rem-cli.rb
 
       - name: Commit and push

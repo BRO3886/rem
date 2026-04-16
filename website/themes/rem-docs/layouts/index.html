@@ -197,7 +197,11 @@
     <h2 class="section-title scroll-reveal">Install in seconds</h2>
     <div class="install-card scroll-reveal">
       <div class="install-tabs" role="tablist">
-        <button class="install-tab active" role="tab" aria-selected="true" data-tab="script">
+        <button class="install-tab active" role="tab" aria-selected="true" data-tab="brew">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 8l4 4-4 4"/><path d="M3 12h18"/></svg>
+          Homebrew
+        </button>
+        <button class="install-tab" role="tab" aria-selected="false" data-tab="script">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
           Script
         </button>
@@ -211,9 +215,22 @@
         </button>
       </div>
 
-      <div class="install-panel active" data-panel="script">
+      <div class="install-panel active" data-panel="brew">
         <div class="install-step">
           <span class="install-label">recommended</span>
+          <div class="code-block code-block-multi">
+            <code>brew tap BRO3886/tap
+brew install rem-cli</code>
+            <button class="copy-btn" data-copy="brew tap BRO3886/tap && brew install rem-cli" aria-label="Copy">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+          </div>
+          <span class="install-note">Formula is named <code>rem-cli</code> to avoid a conflict with an older package in homebrew-core. The binary installs as <code>rem</code>.</span>
+        </div>
+      </div>
+
+      <div class="install-panel" data-panel="script">
+        <div class="install-step">
           <div class="code-block">
             <code>curl -fsSL https://rem.sidv.dev/install | bash</code>
             <button class="copy-btn" data-copy="curl -fsSL https://rem.sidv.dev/install | bash" aria-label="Copy">
@@ -270,9 +287,9 @@ sudo mv rem /usr/local/bin/rem</code>
       <details class="faq-item scroll-reveal">
         <summary class="faq-question">How do I install rem?</summary>
         <div class="faq-answer">
-          <p>The fastest way is the install script:</p>
-          <pre><code>curl -fsSL https://rem.sidv.dev/install | bash</code></pre>
-          <p>Alternatively, if you have Go installed: <code>go install github.com/BRO3886/rem/cmd/rem@latest</code></p>
+          <p>The fastest way is via Homebrew:</p>
+          <pre><code>brew tap BRO3886/tap && brew install rem-cli</code></pre>
+          <p>Or use the install script: <code>curl -fsSL https://rem.sidv.dev/install | bash</code></p>
         </div>
       </details>
 

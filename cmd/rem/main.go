@@ -11,6 +11,7 @@ import (
 // Set by ldflags at build time.
 var (
 	version   = "dev"
+	commit    = "none"
 	buildTime = "unknown"
 )
 
@@ -21,6 +22,7 @@ func main() {
 	}
 
 	commands.Version = version
+	commands.Commit = commit
 	commands.BuildTime = buildTime
 
 	if err := commands.Execute(); err != nil {

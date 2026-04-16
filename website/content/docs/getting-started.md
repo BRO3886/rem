@@ -24,7 +24,16 @@ On first run, macOS will prompt you to grant Reminders access in System Settings
 
 ## Installation
 
-### Via `go install` (recommended)
+### Homebrew
+
+```bash
+brew tap BRO3886/tap
+brew install rem-cli
+```
+
+Note: the formula is named `rem-cli` to avoid a conflict with an older `rem` package in homebrew-core. The binary installs as `rem`.
+
+### Via `go install`
 
 ```bash
 go install github.com/BRO3886/rem/cmd/rem@latest

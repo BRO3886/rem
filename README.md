@@ -17,6 +17,13 @@ A blazing fast CLI for macOS Reminders. Sub-200ms reads AND writes via EventKit,
 
 ## Installation
 
+### Homebrew
+
+```bash
+brew tap BRO3886/tap
+brew install rem
+```
+
 ### Quick install (recommended)
 
 ```bash

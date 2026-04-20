@@ -22,9 +22,11 @@ Go CLI wrapping macOS Reminders. Uses `go-eventkit` (cgo + Objective-C EventKit)
 - **AppleScript only for**: flagged operations (EventKit doesn't expose flagged), default list name query
 - **EventKit doesn't expose `flagged`** - JXA fallback only used when `--flagged` filter is active, AppleScript for flag/unflag writes
 - **go-eventkit field names**: `Title` (not `Name`), `Notes` (not `Body`), `List` (not `ListName`), native `URL` field
+- **URL field goes to `REMURLAttachment`, NOT `EKCalendarItem.URL`**: `EKCalendarItem.URL` is a public property that's disconnected from the Reminders.app UI (Apple bug/limitation). go-eventkit v0.5.0+ writes to the real UI-visible URL field via a private ReminderKit bridge (`REMSaveRequest` → `attachmentContext.setURLAttachmentWithURL:`), guarded by `respondsToSelector:` with fallback to `EKCalendarItem.URL`. See journal 009.
 - **List CRUD via go-eventkit**: `CreateList` (auto-discovers source), `UpdateList` (ID-based), `DeleteList` (ID-based). Immutable lists are rejected.
 - Priority: 0=none, 1-4=high, 5=medium, 6-9=low
 - `due date` and `remind me date` are independent
+- **`rem add --due` auto-attaches a zero-offset alarm by default** (matches Apple Reminders.app). Use `--silent` to suppress. The alarm decision logic lives in `buildAlarms()` in `filters.go` — both CLI and interactive add paths call it. Do NOT pass `--remind-me 0m` to enable — it's the default.
 
 ## Libraries
 - `BRO3886/go-eventkit` - **EventKit bindings** (cgo + ObjC, reads AND writes) + `dateparser` package for NL date parsing

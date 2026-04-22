@@ -67,7 +67,7 @@ make build
 
 ## Requirements
 
-- macOS 10.12+ (uses EventKit for all reads and writes via go-eventkit, AppleScript only for flagged operations)
+- macOS 13+ (uses EventKit for all reads and writes via go-eventkit, AppleScript only for flagged operations)
 - Xcode Command Line Tools (for building from source — cgo/clang + framework headers)
 - First run will prompt for Reminders app access in System Settings > Privacy & Security
 

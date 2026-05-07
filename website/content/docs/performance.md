@@ -30,7 +30,7 @@ Every read command completes in under 200ms. Tested with 224 reminders across 12
 | `rem upcoming` | 0.12s |
 | `rem export --format json` | 0.13s |
 
-All write operations — including reminder CRUD and list CRUD — go through EventKit via go-eventkit, completing in under 200ms. Only flagged operations still use AppleScript (~0.5s).
+All operations — including reminder CRUD, list CRUD, and flagged read/write — go through EventKit and the private ReminderKit bridge via go-eventkit, completing in under 200ms.
 
 ## The optimization journey
 
@@ -74,7 +74,11 @@ Extracted the EventKit bridge into a standalone library (`github.com/BRO3886/go-
 
 ### Stage 6: go-eventkit list CRUD (full EventKit coverage)
 
-go-eventkit v0.2.1 added list CRUD support (create, rename/recolor, delete). rem now uses EventKit for all list operations too, eliminating the last AppleScript dependency for CRUD. AppleScript is now only used for flagged operations (EventKit limitation) and default list name queries.
+go-eventkit v0.2.1 added list CRUD support (create, rename/recolor, delete). rem now uses EventKit for all list operations too.
+
+### Stage 7: go-eventkit private ReminderKit bridge (no more slow paths)
+
+go-eventkit v0.8.0 added flagged read/write via the private ReminderKit framework. EventKit's `EKReminder` doesn't expose a `flagged` property, but `REMReminder.flagged` does — go-eventkit reads it via KVC and writes via `REMSaveRequest`. This eliminated the last AppleScript/JXA slow path. AppleScript is now only used for the default list name query.
 
 ## Before vs after
 
@@ -111,8 +115,8 @@ JXA/AppleScript, by contrast, sends Apple Events to the Reminders.app process. E
 
 ## Writes are now fast too
 
-Since the migration to go-eventkit, all write operations — including reminder CRUD and list CRUD — go through EventKit and complete in under 200ms. Only flagged operations still use AppleScript (~0.5s).
+Since the migration to go-eventkit, all operations — including reminder CRUD, list CRUD, and flagged read/write — go through EventKit and the private ReminderKit bridge, completing in under 200ms.
 
-## Known slow path
+## No remaining slow paths
 
-The `--flagged` filter falls back to JXA because EventKit's `EKReminder` doesn't expose a `flagged` property. This takes ~3-4 seconds. All other reads use EventKit and complete in under 200ms.
+As of go-eventkit v0.8.0, all operations complete in under 200ms. The `--flagged` filter previously fell back to JXA (~3-4 seconds), but now reads the flagged property directly via the private ReminderKit bridge. The only remaining AppleScript call is for the default list name query.

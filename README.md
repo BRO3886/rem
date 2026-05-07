@@ -67,7 +67,7 @@ make build
 
 ## Requirements
 
-- macOS 13+ (uses EventKit for all reads and writes via go-eventkit, AppleScript only for flagged operations)
+- macOS 13+ (uses EventKit + private ReminderKit bridge for all reads and writes via go-eventkit, AppleScript only for default list name query)
 - Xcode Command Line Tools (for building from source — cgo/clang + framework headers)
 - First run will prompt for Reminders app access in System Settings > Privacy & Security
 
@@ -315,7 +315,7 @@ rem/
 │   ├── main.go
 │   └── commands/         # Cobra command definitions
 ├── internal/
-│   ├── service/          # Service layer wrapping go-eventkit (AppleScript only for flagged ops)
+│   ├── service/          # Service layer wrapping go-eventkit (AppleScript only for default list name)
 │   ├── reminder/         # Domain models (Reminder, List, Priority)
 │   ├── export/           # JSON & CSV import/export
 │   ├── skills/           # Agent skill install/uninstall/status
@@ -330,7 +330,7 @@ rem/
 
 **All reads and writes** — including reminder CRUD and list CRUD — go through `go-eventkit` (`github.com/BRO3886/go-eventkit`) — an Objective-C EventKit bridge compiled into the binary via cgo. Direct in-process access to the Reminders store, no IPC. All operations complete in under 200ms.
 
-**Flagged operations** use AppleScript via `osascript` — EventKit doesn't expose the flagged property. Default list name query also uses AppleScript.
+**Flagged operations** use the private ReminderKit bridge in go-eventkit — EventKit doesn't expose the flagged property, but `REMReminder.flagged` does. AppleScript is only used for the default list name query.
 
 ## Performance
 
@@ -350,7 +350,7 @@ See [Performance docs](https://rem.sidv.dev/docs/performance/) for the full opti
 
 - **macOS only** — requires EventKit framework and osascript
 - **No tags/subtasks** — not exposed via EventKit
-- **`--flagged` filter is slow** (~3-4s) — EventKit doesn't expose `flagged`, falls back to JXA
+- **`flagged` uses private API** — reads/writes via ReminderKit bridge, may break on future macOS versions
 - **Immutable lists** cannot be renamed or deleted (system lists like Siri suggestions)
 
 ## License

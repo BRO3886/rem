@@ -16,7 +16,7 @@ sitemap:
 
 ## Overview
 
-rem uses **go-eventkit** (`github.com/BRO3886/go-eventkit`) for all reads and writes — including reminder CRUD and list CRUD — via EventKit's cgo bridge. AppleScript is only used for flagged operations and default list name queries that EventKit doesn't support.
+rem uses **go-eventkit** (`github.com/BRO3886/go-eventkit`) for all reads and writes — including reminder CRUD, list CRUD, and flagged operations — via EventKit's cgo bridge and a private ReminderKit bridge. AppleScript is only used for the default list name query.
 
 <div class="arch-diagram">
   <div class="arch-layer">
@@ -46,7 +46,7 @@ rem uses **go-eventkit** (`github.com/BRO3886/go-eventkit`) for all reads and wr
       <span class="arch-label">AppleScript Path</span>
       <span class="arch-sublabel">osascript fallback</span>
       <span class="arch-detail">internal/service/</span>
-      <span class="arch-file">flagged, default list</span>
+      <span class="arch-file">default list name only</span>
     </div>
   </div>
   <div class="arch-arrow">&#8595;</div>
@@ -95,16 +95,20 @@ JXA (JavaScript for Automation) was rem's original read layer. Each property acc
 
 EventKit is an in-process framework — direct memory access to the reminder store with no IPC. Result: **0.13 seconds** for the same dataset. That's a **462x speedup**.
 
+## Private ReminderKit bridge
+
+EventKit's `EKReminder` does not expose a `flagged` property or the real URL field visible in Reminders.app. go-eventkit bridges these through Apple's private `ReminderKit.framework`:
+
+- **Flagged** — read via KVC (`valueForKey:@"flagged"` on `REMReminder`), write via `REMSaveRequest` → `flaggedContext.setFlagged:`
+- **URL attachments** — write via `REMSaveRequest` → `attachmentContext.setURLAttachmentWithURL:`
+
+Both operations complete in under 200ms, the same as all other EventKit operations. All private API calls are guarded by `respondsToSelector:` checks and will fail cleanly if Apple removes them in a future macOS version.
+
 ## AppleScript fallback
 
-Two operations still use AppleScript via `osascript`:
+One operation still uses AppleScript via `osascript`:
 
-1. **Flag/unflag reminders** — EventKit doesn't expose the `flagged` property
-2. **Default list name** — not exposed by go-eventkit
-
-### The flagged exception
-
-EventKit's `EKReminder` does not expose a `flagged` property. When the `--flagged` filter is active, rem falls back to JXA to fetch flagged reminder IDs. This is the only remaining slow path (~3-4 seconds) but is rarely used. Flag/unflag write operations use AppleScript.
+1. **Default list name** — not exposed by EventKit or go-eventkit
 
 ## Single binary
 
@@ -116,8 +120,8 @@ This means `go install github.com/BRO3886/rem/cmd/rem@latest` works out of the b
 
 ```
 internal/
-├── service/               # Service layer (go-eventkit + AppleScript for flagged only)
-│   ├── executor.go        # Runs osascript (flagged ops, default list name)
+├── service/               # Service layer (go-eventkit + AppleScript for default list name only)
+│   ├── executor.go        # Runs osascript (default list name query)
 │   ├── reminders.go       # ReminderService wrapping go-eventkit
 │   ├── lists.go           # ListService wrapping go-eventkit
 │   └── parser.go          # Backward-compat URL extraction from notes body (fallback reader)
@@ -139,7 +143,7 @@ rem uses five external Go dependencies:
 
 | Package | Purpose |
 |---------|---------|
-| `BRO3886/go-eventkit` v0.5.0+ | Native EventKit bindings (cgo + ObjC, reads AND writes). Includes the private ReminderKit bridge for the native URL field. |
+| `BRO3886/go-eventkit` v0.8.0+ | Native EventKit bindings (cgo + ObjC, reads AND writes). Includes the private ReminderKit bridge for flagged state and URL attachments. |
 | `spf13/cobra` | CLI framework (commands, flags, help) |
 | `olekukonko/tablewriter` | Terminal table formatting |
 | `fatih/color` | Terminal colors |

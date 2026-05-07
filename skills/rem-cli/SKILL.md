@@ -112,7 +112,7 @@ rem update AB12 --url ""    # clear
 1. **macOS only.** rem uses EventKit via cgo. Will fail on Linux — detect OS first if you're unsure.
 2. **Priority uses word forms, not raw numbers.** Pass `--priority high|medium|low|none`. rem does accept raw ints, but Apple's 1–9 scale is inverted (1 = highest, 9 = lowest), so the words are safer when relaying from user input.
 3. **`--due none` clears** the due date in `rem update`. Same for `--remind-me none` and `--repeat none`.
-4. **The `--flagged` filter is slower (~3–4s)** because EventKit doesn't expose the flagged property, so rem falls back to JXA for that filter only. All other operations are sub-200ms.
+4. **Flagged uses private API.** Reads/writes go through Apple's private ReminderKit framework since EventKit doesn't expose the flagged property. Sub-200ms like everything else, but may break on future macOS versions.
 5. **`rem delete` prompts by default.** Pass `--force` / `--yes` / `-y` when scripting to skip the confirmation.
 6. **`rem add -i` (interactive form) has no `--silent` equivalent.** If a user wants a silent reminder via the interactive flow, create it normally and then run `rem update <id> --remind-me none` to clear the alarm.
 7. **Old reminders with URLs in the notes body** (`URL: https://...`) still read correctly as a backward-compat fallback. New reminders always use the native URL field.

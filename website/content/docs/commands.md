@@ -253,7 +253,7 @@ rem lm rename "Projects" "Active Projects"
 rem lm delete "Old List" --force
 ```
 
-> Note: List deletion may fail on some macOS versions due to AppleScript limitations.
+> Note: Immutable system lists (e.g. Siri suggestions) cannot be renamed or deleted.
 
 ## Import & Export
 

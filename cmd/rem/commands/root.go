@@ -31,7 +31,7 @@ func init() {
 		os.Exit(1)
 	}
 	exec = service.NewExecutor()
-	reminderSvc = service.NewReminderService(client, exec)
+	reminderSvc = service.NewReminderService(client)
 	listSvc = service.NewListService(client, exec)
 }
 

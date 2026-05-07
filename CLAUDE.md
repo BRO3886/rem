@@ -4,11 +4,11 @@
 - **Conventional Commits**: ALL commits MUST follow [Conventional Commits](https://www.conventionalcommits.org/). Format: `type(scope): description`. Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `build`, `ci`, `perf`. No exceptions.
 
 ## What is this?
-Go CLI wrapping macOS Reminders. Uses `go-eventkit` (cgo + Objective-C EventKit) for fast reads AND writes (<200ms) as a single binary — including reminder CRUD and list CRUD. AppleScript only for flagged operations and default list name query. Provides CRUD for reminders/lists, natural language dates, and import/export. For programmatic Go access, use `go-eventkit` directly.
+Go CLI wrapping macOS Reminders. Uses `go-eventkit` (cgo + Objective-C EventKit + private ReminderKit bridge) for fast reads AND writes (<200ms) as a single binary — including reminder CRUD, list CRUD, and flagged operations. AppleScript only for the default list name query. Provides CRUD for reminders/lists, natural language dates, and import/export. For programmatic Go access, use `go-eventkit` directly.
 
 ## Architecture
 - `cmd/rem/commands/` - Cobra CLI commands (one file per command); `huh_helpers.go` has shared interactive utilities
-- `internal/service/` - Service layer: `reminders.go` and `lists.go` wrap `go-eventkit` client. `executor.go` runs `osascript` for flagged operations and default list name query only.
+- `internal/service/` - Service layer: `reminders.go` and `lists.go` wrap `go-eventkit` client. `executor.go` runs `osascript` for the default list name query only.
 - `internal/reminder/` - Domain models: `Reminder`, `List`, `Priority`
 - `internal/export/` - JSON/CSV import/export
 - `internal/skills/` - Agent skill install/uninstall/status logic
@@ -19,8 +19,8 @@ Go CLI wrapping macOS Reminders. Uses `go-eventkit` (cgo + Objective-C EventKit)
 ## Critical: Architecture Rules
 - **ALL reads AND writes go through `go-eventkit`** (`github.com/BRO3886/go-eventkit/reminders`) — in-process EventKit via cgo, <200ms
 - **Single binary** — go-eventkit's cgo code compiled into the binary
-- **AppleScript only for**: flagged operations (EventKit doesn't expose flagged), default list name query
-- **EventKit doesn't expose `flagged`** - JXA fallback only used when `--flagged` filter is active, AppleScript for flag/unflag writes
+- **AppleScript only for**: default list name query (nothing else)
+- **Flagged is read/written via go-eventkit** using the private ReminderKit bridge (same mechanism as URL attachments). `EKReminder.flagged` doesn't exist, but `REMReminder.flagged` does. Read via KVC (`valueForKey:`, not `isFlagged` selector — it's a dynamic property). Write via `REMSaveRequest.updateReminder:` change item, then `changeItem.flaggedContext.setFlagged:`, then `saveSynchronouslyWithError:`. Refetch the EKReminder after save so the returned dict reflects the new value. See journal 011.
 - **go-eventkit field names**: `Title` (not `Name`), `Notes` (not `Body`), `List` (not `ListName`), native `URL` field
 - **URL field goes to `REMURLAttachment`, NOT `EKCalendarItem.URL`**: `EKCalendarItem.URL` is a public property that's disconnected from the Reminders.app UI (Apple bug/limitation). go-eventkit v0.5.0+ writes to the real UI-visible URL field via a private ReminderKit bridge (`REMSaveRequest` → `attachmentContext.setURLAttachmentWithURL:`), guarded by `respondsToSelector:` with fallback to `EKCalendarItem.URL`. See journal 009.
 - **List CRUD via go-eventkit**: `CreateList` (auto-discovers source), `UpdateList` (ID-based), `DeleteList` (ID-based). Immutable lists are rejected.

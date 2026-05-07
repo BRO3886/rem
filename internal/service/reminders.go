@@ -3,10 +3,8 @@
 package service
 
 import (
-	"encoding/json"
 	"fmt"
 	"sort"
-	"strings"
 	"time"
 
 	eventkit "github.com/BRO3886/go-eventkit"
@@ -15,15 +13,15 @@ import (
 )
 
 // ReminderService provides operations for reminders using go-eventkit for
-// reads and writes, with AppleScript fallback for flagged operations.
+// all reads and writes, including flagged operations via the private
+// ReminderKit bridge.
 type ReminderService struct {
 	client *reminders.Client
-	exec   *Executor
 }
 
 // NewReminderService creates a new ReminderService.
-func NewReminderService(client *reminders.Client, exec *Executor) *ReminderService {
-	return &ReminderService{client: client, exec: exec}
+func NewReminderService(client *reminders.Client) *ReminderService {
+	return &ReminderService{client: client}
 }
 
 // CreateReminder creates a new reminder and returns its ID.
@@ -48,6 +46,10 @@ func (s *ReminderService) CreateReminder(r *reminder.Reminder) (string, error) {
 		input.URL = r.URL
 	}
 
+	if r.Flagged {
+		input.Flagged = true
+	}
+
 	for _, a := range r.Alarms {
 		input.Alarms = append(input.Alarms, reminders.Alarm{
 			AbsoluteDate:   a.AbsoluteDate,
@@ -62,11 +64,6 @@ func (s *ReminderService) CreateReminder(r *reminder.Reminder) (string, error) {
 	created, err := s.client.CreateReminder(input)
 	if err != nil {
 		return "", fmt.Errorf("failed to create reminder: %w", err)
-	}
-
-	// Set flagged via AppleScript if needed (EventKit can't set flagged)
-	if r.Flagged {
-		_ = s.FlagReminder(created.ID)
 	}
 
 	return created.ID, nil
@@ -108,27 +105,16 @@ func (s *ReminderService) ListReminders(filter *reminder.ListFilter) ([]*reminde
 		return nil, fmt.Errorf("failed to list reminders: %w", err)
 	}
 
-	// Apply flagged filter — EventKit doesn't expose flagged, so we need
-	// JXA fallback when --flagged is active.
+	// Apply flagged filter — go-eventkit reads the flagged property via the
+	// private ReminderKit bridge, so it's already populated on each Reminder.
 	needsFlagged := filter != nil && filter.Flagged != nil && *filter.Flagged
-
-	var flaggedIDs map[string]bool
-	if needsFlagged {
-		flaggedIDs, err = s.fetchFlaggedIDs()
-		if err != nil {
-			return nil, err
-		}
-	}
 
 	result := make([]*reminder.Reminder, 0, len(ekReminders))
 	for i := range ekReminders {
 		r := fromEventKitReminder(&ekReminders[i])
 
-		if needsFlagged {
-			r.Flagged = flaggedIDs[r.ID]
-			if !r.Flagged {
-				continue
-			}
+		if needsFlagged && !r.Flagged {
+			continue
 		}
 
 		result = append(result, r)
@@ -168,47 +154,9 @@ func sortReminders(result []*reminder.Reminder) {
 	})
 }
 
-// fetchFlaggedIDs uses JXA to get the set of flagged reminder IDs.
-func (s *ReminderService) fetchFlaggedIDs() (map[string]bool, error) {
-	script := `
-const app = Application('Reminders');
-const lists = app.lists();
-const result = [];
-for (const list of lists) {
-	const n = list.reminders.length;
-	if (n === 0) continue;
-	const ids = list.reminders.id();
-	const flagged = list.reminders.flagged();
-	for (let i = 0; i < n; i++) {
-		if (flagged[i]) result.push(ids[i]);
-	}
-}
-JSON.stringify(result);`
-
-	output, err := s.exec.RunJXA(script)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch flagged status: %w", err)
-	}
-
-	var ids []string
-	if output != "" && output != "[]" {
-		if err := json.Unmarshal([]byte(output), &ids); err != nil {
-			return nil, fmt.Errorf("failed to parse flagged IDs: %w", err)
-		}
-	}
-
-	m := make(map[string]bool, len(ids))
-	for _, id := range ids {
-		m[id] = true
-	}
-	return m, nil
-}
-
 // UpdateReminder updates properties of an existing reminder.
 func (s *ReminderService) UpdateReminder(id string, updates map[string]any) error {
 	input := reminders.UpdateReminderInput{}
-	var needsAppleScript bool
-	var appleScriptUpdates map[string]any
 
 	for key, value := range updates {
 		switch key {
@@ -238,12 +186,8 @@ func (s *ReminderService) UpdateReminder(id string, updates map[string]any) erro
 			p := reminders.Priority(value.(reminder.Priority))
 			input.Priority = &p
 		case "flagged":
-			// EventKit can't set flagged — use AppleScript
-			needsAppleScript = true
-			if appleScriptUpdates == nil {
-				appleScriptUpdates = make(map[string]any)
-			}
-			appleScriptUpdates["flagged"] = value
+			v := value.(bool)
+			input.Flagged = &v
 		case "completed":
 			v := value.(bool)
 			input.Completed = &v
@@ -283,55 +227,11 @@ func (s *ReminderService) UpdateReminder(id string, updates map[string]any) erro
 		}
 	}
 
-	// Apply EventKit updates (all fields except flagged)
-	hasEventKitUpdates := input.Title != nil || input.Notes != nil ||
-		input.DueDate != nil || input.ClearDueDate ||
-		input.RemindMeDate != nil || input.Priority != nil ||
-		input.Completed != nil || input.URL != nil || input.ListName != nil ||
-		input.Alarms != nil || input.RecurrenceRules != nil
-
-	if hasEventKitUpdates {
-		if _, err := s.client.UpdateReminder(id, input); err != nil {
-			return fmt.Errorf("failed to update reminder: %w", err)
-		}
-	}
-
-	// Apply AppleScript updates (flagged)
-	if needsAppleScript {
-		if err := s.updateViaAppleScript(id, appleScriptUpdates); err != nil {
-			return fmt.Errorf("failed to update reminder flags: %w", err)
-		}
+	if _, err := s.client.UpdateReminder(id, input); err != nil {
+		return fmt.Errorf("failed to update reminder: %w", err)
 	}
 
 	return nil
-}
-
-// updateViaAppleScript updates reminder properties that EventKit doesn't support.
-func (s *ReminderService) updateViaAppleScript(id string, updates map[string]any) error {
-	var setStatements []string
-
-	for key, value := range updates {
-		switch key {
-		case "flagged":
-			if value.(bool) {
-				setStatements = append(setStatements, `set flagged of r to true`)
-			} else {
-				setStatements = append(setStatements, `set flagged of r to false`)
-			}
-		}
-	}
-
-	if len(setStatements) == 0 {
-		return nil
-	}
-
-	script := fmt.Sprintf(`tell application "Reminders"
-	set r to first reminder whose id is "%s"
-	%s
-end tell`, EscapeString(id), strings.Join(setStatements, "\n\t"))
-
-	_, err := s.exec.Run(script)
-	return err
 }
 
 // DeleteReminder deletes a reminder by ID.
@@ -364,14 +264,22 @@ func (s *ReminderService) UncompleteReminder(id string) error {
 	return nil
 }
 
-// FlagReminder flags a reminder via AppleScript (EventKit doesn't support flagged).
+// FlagReminder flags a reminder via the private ReminderKit bridge.
 func (s *ReminderService) FlagReminder(id string) error {
-	return s.updateViaAppleScript(id, map[string]any{"flagged": true})
+	flagged := true
+	if _, err := s.client.UpdateReminder(id, reminders.UpdateReminderInput{Flagged: &flagged}); err != nil {
+		return fmt.Errorf("failed to flag reminder: %w", err)
+	}
+	return nil
 }
 
-// UnflagReminder removes the flag from a reminder via AppleScript.
+// UnflagReminder removes the flag from a reminder via the private ReminderKit bridge.
 func (s *ReminderService) UnflagReminder(id string) error {
-	return s.updateViaAppleScript(id, map[string]any{"flagged": false})
+	flagged := false
+	if _, err := s.client.UpdateReminder(id, reminders.UpdateReminderInput{Flagged: &flagged}); err != nil {
+		return fmt.Errorf("failed to unflag reminder: %w", err)
+	}
+	return nil
 }
 
 // toEventKitRecurrenceRule converts a domain RecurrenceRule to an eventkit RecurrenceRule.

@@ -199,8 +199,13 @@ func (s *ReminderService) UpdateReminder(id string, updates map[string]any) erro
 			v := value.(string)
 			input.URL = &v
 		case "tags":
-			v := value.([]string)
-			input.Tags = &v
+			if value == nil {
+				empty := []string{}
+				input.Tags = &empty
+			} else {
+				v := value.([]string)
+				input.Tags = &v
+			}
 		case "list":
 			v := value.(string)
 			input.ListName = &v

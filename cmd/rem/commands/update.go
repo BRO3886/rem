@@ -17,7 +17,7 @@ var (
 	updateURL         string
 	updateFlagged     string
 	updateAddTagsBulk string
-	updateRemoveBulk  string
+	updateRemoveTagsBulk  string
 	updateList        string
 	updateRemindMe    string
 	updateRepeat      string
@@ -92,8 +92,8 @@ var updateCmd = &cobra.Command{
 		if cmd.Flags().Changed("name") {
 			titleTags = tagsFromTitle(updateName)
 		}
-		if len(titleTags) > 0 || updateAddTagsBulk != "" || updateRemoveBulk != "" {
-			updates["tags"] = mergeTagUpdates(r.Tags, titleTags, updateAddTagsBulk, updateRemoveBulk)
+		if len(titleTags) > 0 || updateAddTagsBulk != "" || updateRemoveTagsBulk != "" {
+			updates["tags"] = mergeTagUpdates(r.Tags, titleTags, updateAddTagsBulk, updateRemoveTagsBulk)
 		}
 		if cmd.Flags().Changed("list") {
 			updates["list"] = updateList
@@ -143,7 +143,7 @@ func init() {
 	updateCmd.Flags().StringVarP(&updateURL, "url", "u", "", "New URL")
 	updateCmd.Flags().StringVar(&updateFlagged, "flagged", "", "Set flagged status: true/false")
 	updateCmd.Flags().StringVar(&updateAddTagsBulk, "add-tags", "", "Add comma-separated native tags")
-	updateCmd.Flags().StringVar(&updateRemoveBulk, "remove-tags", "", "Remove comma-separated native tags")
+	updateCmd.Flags().StringVar(&updateRemoveTagsBulk, "remove-tags", "", "Remove comma-separated native tags")
 	updateCmd.Flags().StringVarP(&updateList, "list", "l", "", "Move reminder to a different list")
 	updateCmd.Flags().StringVar(&updateRemindMe, "remind-me", "", "Set alarm: duration before due (15m, 1h, 2d), 'none' to clear")
 	updateCmd.Flags().StringVar(&updateRepeat, "repeat", "", "Set recurrence: daily, weekly, 'weekly on mon,wed,fri', 'none' to clear")

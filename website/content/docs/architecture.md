@@ -97,12 +97,13 @@ EventKit is an in-process framework — direct memory access to the reminder sto
 
 ## Private ReminderKit bridge
 
-EventKit's `EKReminder` does not expose a `flagged` property or the real URL field visible in Reminders.app. go-eventkit bridges these through Apple's private `ReminderKit.framework`:
+EventKit's `EKReminder` does not expose flagged state, the real URL field, or hashtags visible in Reminders.app. go-eventkit bridges these through Apple's private `ReminderKit.framework`:
 
 - **Flagged** — read via KVC (`valueForKey:@"flagged"` on `REMReminder`), write via `REMSaveRequest` → `flaggedContext.setFlagged:`
 - **URL attachments** — write via `REMSaveRequest` → `attachmentContext.setURLAttachmentWithURL:`
+- **Tags** — read via KVC (`valueForKey:@"hashtags"` on `REMReminder`), write via `REMSaveRequest` → `hashtagContext.addHashtagWithType:name:`
 
-Both operations complete in under 200ms, the same as all other EventKit operations. All private API calls are guarded by `respondsToSelector:` checks and will fail cleanly if Apple removes them in a future macOS version.
+All private API calls are guarded by `respondsToSelector:` checks and complete in under 200ms. Tags degrade gracefully — if the private API becomes unavailable, the reminder is created/updated without tags and a warning is printed. Flagged and URL operations also degrade cleanly.
 
 ## AppleScript fallback
 
@@ -143,7 +144,7 @@ rem uses five external Go dependencies:
 
 | Package | Purpose |
 |---------|---------|
-| `BRO3886/go-eventkit` v0.8.0+ | Native EventKit bindings (cgo + ObjC, reads AND writes). Includes the private ReminderKit bridge for flagged state and URL attachments. |
+| `BRO3886/go-eventkit` v0.9.0+ | Native EventKit bindings (cgo + ObjC, reads AND writes). Includes the private ReminderKit bridge for flagged state, URL attachments, and hashtags. |
 | `spf13/cobra` | CLI framework (commands, flags, help) |
 | `olekukonko/tablewriter` | Terminal table formatting |
 | `fatih/color` | Terminal colors |

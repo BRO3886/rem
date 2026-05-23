@@ -334,7 +334,7 @@ rem/
 
 **All reads and writes** — including reminder CRUD and list CRUD — go through `go-eventkit` (`github.com/BRO3886/go-eventkit`) — an Objective-C EventKit bridge compiled into the binary via cgo. Direct in-process access to the Reminders store, no IPC. All operations complete in under 200ms.
 
-**Flagged operations** use the private ReminderKit bridge in go-eventkit — EventKit doesn't expose the flagged property, but `REMReminder.flagged` does. AppleScript is only used for the default list name query.
+**Flagged and tag operations** use the private ReminderKit bridge in go-eventkit — EventKit doesn't expose these properties, but `REMReminder.flagged` and `REMReminder.hashtags` do. Tags degrade gracefully if the private API becomes unavailable. AppleScript is only used for the default list name query.
 
 ## Performance
 

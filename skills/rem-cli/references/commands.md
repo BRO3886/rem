@@ -9,6 +9,7 @@ rem add "Buy groceries" --list Personal --due tomorrow --priority high
 rem add "Review PR" --due "next friday at 2pm" --url https://github.com/org/repo/pull/123
 rem add "Call dentist" --notes "Ask about cleaning"
 rem add "Meeting" --due "tomorrow at 10am" --remind-me 15m
+rem add "Review PR #work #urgent" --tags "deploy"         # native tags from title + flag
 rem add "Silent checklist item" --due tomorrow --silent   # due date, no notification
 rem add -i   # Interactive mode
 ```
@@ -25,6 +26,7 @@ rem add -i   # Interactive mode
 | `--notes` | `-n` | Notes/body text | Empty |
 | `--url` | `-u` | URL to attach (shows in Reminders.app URL field) | None |
 | `--flagged` | `-f` | Flag the reminder | false |
+| `--tags` | — | Comma-separated native tags (e.g. `work,urgent`) | None |
 | `--remind-me` | — | Custom alarm: duration before due (15m, 1h, 2d) or absolute time | Auto: at due time when `--due` is set |
 | `--silent` | — | Don't auto-attach an alarm when `--due` is set | false |
 | `--repeat` | — | Set recurrence: daily, weekly, monthly, yearly, or 'weekly on mon,wed,fri' | None |
@@ -94,10 +96,14 @@ rem update abc12345 --list "Work"  # Move to a different list
 rem update abc12345 --remind-me 15m
 rem update abc12345 --url https://github.com/org/repo/pull/42
 rem update abc12345 --url ""      # Clear URL
+rem update abc12345 --add-tags "work,urgent"    # Add tags
+rem update abc12345 --remove-tags "urgent"      # Remove tags
 rem update abc12345 -i            # Interactive mode
 ```
 
 **URLs.** `--url` writes to the native Reminders.app URL field (not notes/body). Pass `--url ""` to clear the URL.
+
+**Tags.** `--add-tags` and `--remove-tags` accept comma-separated tag names. Tags in `--name` are also parsed (e.g. `--name "Task #work"` adds the `work` tag). Tags use the private ReminderKit API and degrade gracefully if unavailable.
 
 | Flag | Short | Description | Default |
 |------|-------|-------------|---------|
@@ -108,6 +114,8 @@ rem update abc12345 -i            # Interactive mode
 | `--priority` | `-p` | New priority: high, medium, low, none | — |
 | `--url` | `-u` | New URL (empty string to clear) | — |
 | `--flagged` | — | Set flagged: true/false | — |
+| `--add-tags` | — | Add comma-separated native tags | — |
+| `--remove-tags` | — | Remove comma-separated native tags | — |
 | `--remind-me` | — | Set alarm: duration (15m, 1h, 2d), 'none' to clear | — |
 | `--repeat` | — | Set recurrence: daily, weekly, monthly, yearly, 'none' to clear | — |
 | `--interactive` | `-i` | Update interactively | false |

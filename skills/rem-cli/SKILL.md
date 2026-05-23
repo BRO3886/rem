@@ -1,6 +1,6 @@
 ---
 name: rem-cli
-description: Create, list, update, complete, and search macOS Reminders via the rem CLI. Use when the user wants to manage Apple Reminders from the terminal, automate reminder workflows, reference reminders in shell scripts, or schedule anything on macOS.
+description: Create, list, update, complete, tag, and search macOS Reminders via the rem CLI. Use when the user wants to manage Apple Reminders from the terminal, automate reminder workflows, reference reminders in shell scripts, or schedule anything on macOS.
 license: MIT
 compatibility: Requires macOS with the rem CLI installed (https://rem.sidv.dev)
 allowed-tools: Bash(rem *)
@@ -62,6 +62,8 @@ Do NOT use rem for:
 | "move X to list Y" | `rem update <short-id> --list "Y"` |
 | "change priority to high" | `rem update <short-id> --priority high` |
 | "add notes to X" | `rem update <short-id> --notes "..."` |
+| "tag this as work" / "add tags" | `rem add "Task #work"` or `rem update <short-id> --add-tags "work,urgent"` |
+| "remove the urgent tag" | `rem update <short-id> --remove-tags "urgent"` |
 | "make it repeat weekly / monthly" | `rem add ... --repeat weekly` or `--repeat "weekly on mon,wed,fri"` |
 | "clear the due date on X" | `rem update <short-id> --due none` |
 | "what lists do I have" | `rem lists` (add `--count` for per-list totals) |
@@ -112,10 +114,11 @@ rem update AB12 --url ""    # clear
 1. **macOS only.** rem uses EventKit via cgo. Will fail on Linux — detect OS first if you're unsure.
 2. **Priority uses word forms, not raw numbers.** Pass `--priority high|medium|low|none`. rem does accept raw ints, but Apple's 1–9 scale is inverted (1 = highest, 9 = lowest), so the words are safer when relaying from user input.
 3. **`--due none` clears** the due date in `rem update`. Same for `--remind-me none` and `--repeat none`.
-4. **Flagged uses private API.** Reads/writes go through Apple's private ReminderKit framework since EventKit doesn't expose the flagged property. Sub-200ms like everything else, but may break on future macOS versions.
-5. **`rem delete` prompts by default.** Pass `--force` / `--yes` / `-y` when scripting to skip the confirmation.
-6. **`rem add -i` (interactive form) has no `--silent` equivalent.** If a user wants a silent reminder via the interactive flow, create it normally and then run `rem update <id> --remind-me none` to clear the alarm.
-7. **Old reminders with URLs in the notes body** (`URL: https://...`) still read correctly as a backward-compat fallback. New reminders always use the native URL field.
+4. **Flagged and tags use private API.** Both go through Apple's private ReminderKit framework since EventKit doesn't expose these properties. Sub-200ms like everything else, but may break on future macOS versions. Tags degrade gracefully — if the private API is unavailable, the reminder is created/updated without tags and a warning is printed.
+5. **Tags from title are additive.** `#hashtags` in the title are parsed and stored as native Reminders.app tags. They stay in the title text AND become tag objects. Pure numbers like `#42` are ignored (treated as issue references, not tags).
+6. **`rem delete` prompts by default.** Pass `--force` / `--yes` / `-y` when scripting to skip the confirmation.
+7. **`rem add -i` (interactive form) has no `--silent` equivalent.** If a user wants a silent reminder via the interactive flow, create it normally and then run `rem update <id> --remind-me none` to clear the alarm.
+8. **Old reminders with URLs in the notes body** (`URL: https://...`) still read correctly as a backward-compat fallback. New reminders always use the native URL field.
 
 ## Reference files (load when needed)
 

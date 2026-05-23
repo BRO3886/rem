@@ -37,6 +37,7 @@ rem add "Buy groceries" --due tomorrow --priority high --list Personal
 rem add "Review PR" --due "friday at 2pm" --remind-me 30m   # notify 30 min before
 rem add "Checklist item" --due tomorrow --silent            # due date, no notification
 rem add "Ship demo" --url https://github.com/BRO3886/rem/pull/24
+rem add "Review PR #work #urgent" --tags "deploy"          # native tags
 ```
 
 **Aliases:** `create`, `new`
@@ -44,6 +45,8 @@ rem add "Ship demo" --url https://github.com/BRO3886/rem/pull/24
 **Notifications.** When `--due` is set, rem auto-attaches an alarm at the due time so the system actually fires a notification — matching Apple Reminders.app default behavior. Use `--remind-me` to override the timing (e.g. `15m` for 15 minutes before), or `--silent` to suppress the auto-alarm entirely.
 
 **URLs.** `--url` writes to the real Reminders.app URL field (not the notes body), so URLs show up with Apple's native link card rendering in the Reminders.app UI.
+
+**Tags.** `#hashtags` in the title are automatically parsed and stored as native Reminders.app tags. You can also pass tags via the `--tags` flag. Tags use the private ReminderKit API — if Apple changes it in a future macOS version, the reminder is still created successfully (tags just won't be set).
 
 | Flag | Description |
 |------|-------------|
@@ -53,6 +56,7 @@ rem add "Ship demo" --url https://github.com/BRO3886/rem/pull/24
 | `-n, --notes` | Notes/body text |
 | `-u, --url` | URL (shows in Reminders.app URL field) |
 | `-f, --flagged` | Flag the reminder |
+| `--tags` | Comma-separated native tags (e.g. `work,urgent`) |
 | `--remind-me` | Custom alarm: duration before due (`15m`, `1h`, `2d`) or absolute time |
 | `--silent` | Don't auto-attach an alarm when `--due` is set |
 | `--repeat` | Set recurrence: `daily`, `weekly`, `monthly`, `yearly`, or `weekly on mon,wed,fri` |
@@ -100,11 +104,15 @@ Update an existing reminder.
 rem update 6ECE --priority medium --due "next friday"
 rem update 6ECE --url https://github.com/org/repo/pull/42
 rem update 6ECE --url ""   # clear URL
+rem update 6ECE --add-tags "work,urgent"    # add tags
+rem update 6ECE --remove-tags "urgent"      # remove tags
 ```
 
 **Aliases:** `edit`
 
 `--url` writes to the native Reminders.app URL field (not the notes body). Pass an empty string (`--url ""`) to clear.
+
+`--add-tags` and `--remove-tags` accept comma-separated tag names. Tags in `--name` are also parsed as hashtags. Tags use the private ReminderKit API and degrade gracefully if unavailable.
 
 | Flag | Description |
 |------|-------------|
@@ -115,6 +123,8 @@ rem update 6ECE --url ""   # clear URL
 | `-n, --notes` | New notes |
 | `-u, --url` | New URL (empty string to clear) |
 | `--flagged` | Set flag: `true` or `false` |
+| `--add-tags` | Add comma-separated native tags |
+| `--remove-tags` | Remove comma-separated native tags |
 | `--remind-me` | Set alarm: duration (`15m`, `1h`, `2d`), `none` to clear |
 | `--repeat` | Set recurrence: `daily`, `weekly`, `monthly`, `yearly`, `none` to clear |
 | `-i, --interactive` | Interactive update |

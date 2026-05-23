@@ -11,7 +11,8 @@ A blazing fast CLI for macOS Reminders. Sub-200ms reads AND writes via EventKit,
 - **Natural language dates** — `tomorrow`, `next friday at 2pm`, `in 3 hours`, `eod`
 - **20 commands** — full CRUD, search, stats, overdue, upcoming, interactive mode
 - **Multiple output formats** — table, JSON, plain text
-- **Import/Export** — JSON and CSV with full property round-trip
+- **Native tags** — `#hashtag` in titles or `--tags` flag, stored as real Reminders.app tags
+- **Import/Export** — JSON and CSV with full property round-trip (including tags)
 - **Powered by [go-eventkit](https://github.com/BRO3886/go-eventkit)** — use the same library directly for programmatic Go access
 - **Shell completions** — bash, zsh, fish
 
@@ -80,6 +81,9 @@ rem lists --count
 # Create a reminder with an alarm
 rem add "Buy groceries" --list Personal --due tomorrow --priority high --remind-me 15m
 
+# Create with tags (parsed from title + --tags flag)
+rem add "Review PR #work #urgent" --tags "deploy"
+
 # List incomplete reminders
 rem list --list Work --incomplete
 
@@ -102,7 +106,7 @@ rem stats
 
 ```bash
 # Create
-rem add "Title" [--list LIST] [--due DATE] [--priority high|medium|low] [--notes TEXT] [--url URL] [--flagged] [--remind-me DURATION] [--repeat PATTERN]
+rem add "Title" [--list LIST] [--due DATE] [--priority high|medium|low] [--notes TEXT] [--url URL] [--flagged] [--tags TAGS] [--remind-me DURATION] [--repeat PATTERN]
 rem add -i                          # Interactive creation
 
 # List
@@ -114,7 +118,7 @@ rem show <id>                       # Full or partial ID
 rem get <id> -o json
 
 # Update
-rem update <id> [--name TEXT] [--due DATE] [--priority LEVEL] [--notes TEXT] [--url URL] [--remind-me DURATION] [--repeat PATTERN] [--list LIST]
+rem update <id> [--name TEXT] [--due DATE] [--priority LEVEL] [--notes TEXT] [--url URL] [--add-tags TAGS] [--remove-tags TAGS] [--remind-me DURATION] [--repeat PATTERN] [--list LIST]
 
 # Complete / Uncomplete
 rem complete <id>
@@ -349,8 +353,8 @@ See [Performance docs](https://rem.sidv.dev/docs/performance/) for the full opti
 ## Known Limitations
 
 - **macOS only** — requires EventKit framework and osascript
-- **No tags/subtasks** — not exposed via EventKit
-- **`flagged` uses private API** — reads/writes via ReminderKit bridge, may break on future macOS versions
+- **No subtasks** — not exposed via EventKit
+- **Tags and flagged use private API** — reads/writes go through Apple's private ReminderKit framework since EventKit doesn't expose these properties. If Apple changes the private API in a future macOS version, tags degrade gracefully (reminder is created/updated without tags, a warning is printed) while flagged currently degrades silently. See [#44](https://github.com/BRO3886/rem/issues/44) for tracking consistency
 - **Immutable lists** cannot be renamed or deleted (system lists like Siri suggestions)
 
 ## License

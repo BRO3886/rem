@@ -177,7 +177,7 @@ func runAddInteractive() error {
 		ListName: listName,
 		URL:      url,
 		Flagged:  flagged,
-		Tags:     mergeTags(nil, append(tagsFromTitle(title), parseTagList(tagsStr)...), nil),
+		Tags:     mergeTagInputs(tagsFromTitle(title), tagsStr),
 		Priority: reminder.ParsePriority(priorityStr),
 	}
 

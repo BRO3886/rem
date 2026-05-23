@@ -116,6 +116,7 @@ func runAddInteractive() error {
 		listName    string
 		priorityStr string
 		url         string
+		tagsStr     string
 		flagged     bool
 	)
 
@@ -150,6 +151,10 @@ func runAddInteractive() error {
 				Title("URL").
 				Description("Optional").
 				Value(&url),
+			huh.NewInput().
+				Title("Tags").
+				Description("Comma-separated, optional").
+				Value(&tagsStr),
 			huh.NewConfirm().
 				Title("Flagged?").
 				Affirmative("Yes").
@@ -172,6 +177,7 @@ func runAddInteractive() error {
 		ListName: listName,
 		URL:      url,
 		Flagged:  flagged,
+		Tags:     mergeTags(nil, append(tagsFromTitle(title), parseTagList(tagsStr)...), nil),
 		Priority: reminder.ParsePriority(priorityStr),
 	}
 

@@ -36,6 +36,7 @@ func (s *ReminderService) CreateReminder(r *reminder.Reminder) (string, error) {
 		ListName: r.ListName,
 		DueDate:  r.DueDate,
 		Priority: reminders.Priority(r.Priority),
+		Tags:     r.Tags,
 	}
 
 	if r.RemindMeDate != nil {
@@ -97,6 +98,9 @@ func (s *ReminderService) ListReminders(filter *reminder.ListFilter) ([]*reminde
 		}
 		if filter.DueAfter != nil {
 			opts = append(opts, reminders.WithDueAfter(*filter.DueAfter))
+		}
+		if len(filter.Tags) > 0 {
+			opts = append(opts, reminders.WithTags(filter.Tags...))
 		}
 	}
 
@@ -194,6 +198,9 @@ func (s *ReminderService) UpdateReminder(id string, updates map[string]any) erro
 		case "url":
 			v := value.(string)
 			input.URL = &v
+		case "tags":
+			v := value.([]string)
+			input.Tags = &v
 		case "list":
 			v := value.(string)
 			input.ListName = &v
@@ -318,6 +325,7 @@ func fromEventKitReminder(r *reminders.Reminder) *reminder.Reminder {
 		Completed:        r.Completed,
 		Flagged:          r.Flagged,
 		URL:              r.URL,
+		Tags:             append([]string(nil), r.Tags...),
 		Recurring:        r.Recurring,
 		HasAlarms:        r.HasAlarms,
 	}

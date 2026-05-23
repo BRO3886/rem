@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/BRO3886/rem/internal/reminder"
 	"github.com/charmbracelet/huh"
@@ -15,6 +16,8 @@ var (
 	updatePriority    string
 	updateURL         string
 	updateFlagged     string
+	updateAddTagsBulk string
+	updateRemoveBulk  string
 	updateList        string
 	updateRemindMe    string
 	updateRepeat      string
@@ -85,6 +88,13 @@ var updateCmd = &cobra.Command{
 		if cmd.Flags().Changed("flagged") {
 			updates["flagged"] = updateFlagged == "true" || updateFlagged == "yes"
 		}
+		titleTags := []string(nil)
+		if cmd.Flags().Changed("name") {
+			titleTags = tagsFromTitle(updateName)
+		}
+		if len(titleTags) > 0 || updateAddTagsBulk != "" || updateRemoveBulk != "" {
+			updates["tags"] = mergeTagUpdates(r.Tags, titleTags, updateAddTagsBulk, updateRemoveBulk)
+		}
 		if cmd.Flags().Changed("list") {
 			updates["list"] = updateList
 		}
@@ -132,12 +142,114 @@ func init() {
 	updateCmd.Flags().StringVarP(&updatePriority, "priority", "p", "", "New priority: high, medium, low, none")
 	updateCmd.Flags().StringVarP(&updateURL, "url", "u", "", "New URL")
 	updateCmd.Flags().StringVar(&updateFlagged, "flagged", "", "Set flagged status: true/false")
+	updateCmd.Flags().StringVar(&updateAddTagsBulk, "add-tags", "", "Add comma-separated native tags")
+	updateCmd.Flags().StringVar(&updateRemoveBulk, "remove-tags", "", "Remove comma-separated native tags")
 	updateCmd.Flags().StringVarP(&updateList, "list", "l", "", "Move reminder to a different list")
 	updateCmd.Flags().StringVar(&updateRemindMe, "remind-me", "", "Set alarm: duration before due (15m, 1h, 2d), 'none' to clear")
 	updateCmd.Flags().StringVar(&updateRepeat, "repeat", "", "Set recurrence: daily, weekly, 'weekly on mon,wed,fri', 'none' to clear")
 	updateCmd.Flags().BoolVarP(&updateInteractive, "interactive", "i", false, "Update interactively")
 
 	rootCmd.AddCommand(updateCmd)
+}
+
+func normalizeTag(tag string) string {
+	tag = strings.TrimSpace(tag)
+	tag = strings.TrimPrefix(tag, "#")
+	return strings.Trim(tag, ".,;:!?)]}\"'")
+}
+
+func tagsFromTitle(title string) []string {
+	fields := strings.Fields(title)
+	var tags []string
+	seen := map[string]bool{}
+	for _, field := range fields {
+		if !strings.HasPrefix(field, "#") {
+			continue
+		}
+		tag := normalizeTag(field)
+		if tag == "" || isNumeric(tag) {
+			continue
+		}
+		key := strings.ToLower(tag)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		tags = append(tags, tag)
+	}
+	return tags
+}
+
+func parseTagList(input string) []string {
+	if strings.TrimSpace(input) == "" {
+		return nil
+	}
+	parts := strings.Split(input, ",")
+	tags := make([]string, 0, len(parts))
+	for _, part := range parts {
+		tag := normalizeTag(part)
+		if tag != "" {
+			tags = append(tags, tag)
+		}
+	}
+	return tags
+}
+
+func mergeTagUpdates(existing, titleTags []string, addComma string, removeComma string) []string {
+	add := append([]string(nil), titleTags...)
+	add = append(add, parseTagList(addComma)...)
+	remove := parseTagList(removeComma)
+	return mergeTags(existing, add, remove)
+}
+
+func mergeTagInputs(titleTags []string, commaSeparated string) []string {
+	all := append([]string(nil), titleTags...)
+	all = append(all, parseTagList(commaSeparated)...)
+	return mergeTags(nil, all, nil)
+}
+
+func isNumeric(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
+}
+
+func mergeTags(existing, add, remove []string) []string {
+	removed := make(map[string]bool, len(remove))
+	for _, tag := range remove {
+		tag = strings.ToLower(normalizeTag(tag))
+		if tag != "" {
+			removed[tag] = true
+		}
+	}
+
+	seen := make(map[string]bool, len(existing)+len(add))
+	var merged []string
+	for _, tag := range existing {
+		tag = normalizeTag(tag)
+		key := strings.ToLower(tag)
+		if tag == "" || removed[key] || seen[key] {
+			continue
+		}
+		seen[key] = true
+		merged = append(merged, tag)
+	}
+	for _, tag := range add {
+		tag = normalizeTag(tag)
+		key := strings.ToLower(tag)
+		if tag == "" || removed[key] || seen[key] {
+			continue
+		}
+		seen[key] = true
+		merged = append(merged, tag)
+	}
+	return merged
 }
 
 // runUpdateInteractive runs the interactive update form.
@@ -182,6 +294,7 @@ func runUpdateInteractive(idArg string) error {
 	name := r.Name
 	notes := r.Body
 	url := r.URL
+	tagsStr := strings.Join(r.Tags, ", ")
 	dueStr := ""
 	if r.DueDate != nil {
 		dueStr = r.DueDate.Local().Format("Jan 02, 2006 3:04 PM")
@@ -250,6 +363,10 @@ func runUpdateInteractive(idArg string) error {
 			huh.NewInput().
 				Title("URL").
 				Value(&url),
+			huh.NewInput().
+				Title("Tags").
+				Description("Comma-separated; clear to remove all tags").
+				Value(&tagsStr),
 			huh.NewSelect[string]().
 				Title("Flagged").
 				Options(flaggedOptions...).
@@ -282,6 +399,14 @@ func runUpdateInteractive(idArg string) error {
 	}
 	if priorityStr != r.Priority.String() {
 		updates["priority"] = reminder.ParsePriority(priorityStr)
+	}
+	if tagsStr != strings.Join(r.Tags, ", ") {
+		updates["tags"] = mergeTags(nil, append(tagsFromTitle(name), parseTagList(tagsStr)...), nil)
+	} else if name != r.Name {
+		titleTags := tagsFromTitle(name)
+		if len(titleTags) > 0 {
+			updates["tags"] = mergeTags(r.Tags, titleTags, nil)
+		}
 	}
 
 	// Handle due date changes

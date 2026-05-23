@@ -13,7 +13,7 @@ import (
 
 var csvHeaders = []string{
 	"id", "name", "body", "list_name", "due_date", "remind_me_date",
-	"priority", "priority_label", "flagged", "completed", "url",
+	"priority", "priority_label", "flagged", "completed", "url", "tags",
 }
 
 // ExportCSV writes reminders as CSV to the writer.
@@ -47,6 +47,7 @@ func ExportCSV(w io.Writer, reminders []*reminder.Reminder) error {
 			strconv.FormatBool(r.Flagged),
 			strconv.FormatBool(r.Completed),
 			r.URL,
+			strings.Join(r.Tags, ","),
 		}
 
 		if err := writer.Write(record); err != nil {
@@ -98,6 +99,14 @@ func ImportCSV(r io.Reader) ([]*reminder.Reminder, error) {
 		}
 		if idx, ok := colMap["url"]; ok && idx < len(record) {
 			rem.URL = record[idx]
+		}
+		if idx, ok := colMap["tags"]; ok && idx < len(record) && record[idx] != "" {
+			for _, tag := range strings.Split(record[idx], ",") {
+				tag = strings.TrimSpace(strings.TrimPrefix(tag, "#"))
+				if tag != "" {
+					rem.Tags = append(rem.Tags, tag)
+				}
+			}
 		}
 		if idx, ok := colMap["due_date"]; ok && idx < len(record) && record[idx] != "" {
 			t, err := time.ParseInLocation(timeFormat, record[idx], time.Now().Location())

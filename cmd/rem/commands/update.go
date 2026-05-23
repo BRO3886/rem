@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/BRO3886/rem/internal/reminder"
 	"github.com/charmbracelet/huh"
@@ -15,6 +16,8 @@ var (
 	updatePriority    string
 	updateURL         string
 	updateFlagged     string
+	updateAddTagsBulk string
+	updateRemoveTagsBulk  string
 	updateList        string
 	updateRemindMe    string
 	updateRepeat      string
@@ -85,6 +88,13 @@ var updateCmd = &cobra.Command{
 		if cmd.Flags().Changed("flagged") {
 			updates["flagged"] = updateFlagged == "true" || updateFlagged == "yes"
 		}
+		titleTags := []string(nil)
+		if cmd.Flags().Changed("name") {
+			titleTags = tagsFromTitle(updateName)
+		}
+		if len(titleTags) > 0 || updateAddTagsBulk != "" || updateRemoveTagsBulk != "" {
+			updates["tags"] = mergeTagUpdates(r.Tags, titleTags, updateAddTagsBulk, updateRemoveTagsBulk)
+		}
 		if cmd.Flags().Changed("list") {
 			updates["list"] = updateList
 		}
@@ -132,6 +142,8 @@ func init() {
 	updateCmd.Flags().StringVarP(&updatePriority, "priority", "p", "", "New priority: high, medium, low, none")
 	updateCmd.Flags().StringVarP(&updateURL, "url", "u", "", "New URL")
 	updateCmd.Flags().StringVar(&updateFlagged, "flagged", "", "Set flagged status: true/false")
+	updateCmd.Flags().StringVar(&updateAddTagsBulk, "add-tags", "", "Add comma-separated native tags")
+	updateCmd.Flags().StringVar(&updateRemoveTagsBulk, "remove-tags", "", "Remove comma-separated native tags")
 	updateCmd.Flags().StringVarP(&updateList, "list", "l", "", "Move reminder to a different list")
 	updateCmd.Flags().StringVar(&updateRemindMe, "remind-me", "", "Set alarm: duration before due (15m, 1h, 2d), 'none' to clear")
 	updateCmd.Flags().StringVar(&updateRepeat, "repeat", "", "Set recurrence: daily, weekly, 'weekly on mon,wed,fri', 'none' to clear")
@@ -182,6 +194,7 @@ func runUpdateInteractive(idArg string) error {
 	name := r.Name
 	notes := r.Body
 	url := r.URL
+	tagsStr := strings.Join(r.Tags, ", ")
 	dueStr := ""
 	if r.DueDate != nil {
 		dueStr = r.DueDate.Local().Format("Jan 02, 2006 3:04 PM")
@@ -250,6 +263,10 @@ func runUpdateInteractive(idArg string) error {
 			huh.NewInput().
 				Title("URL").
 				Value(&url),
+			huh.NewInput().
+				Title("Tags").
+				Description("Comma-separated; clear to remove all tags").
+				Value(&tagsStr),
 			huh.NewSelect[string]().
 				Title("Flagged").
 				Options(flaggedOptions...).
@@ -282,6 +299,14 @@ func runUpdateInteractive(idArg string) error {
 	}
 	if priorityStr != r.Priority.String() {
 		updates["priority"] = reminder.ParsePriority(priorityStr)
+	}
+	if tagsStr != strings.Join(r.Tags, ", ") {
+		updates["tags"] = mergeTags(nil, append(tagsFromTitle(name), parseTagList(tagsStr)...), nil)
+	} else if name != r.Name {
+		titleTags := tagsFromTitle(name)
+		if len(titleTags) > 0 {
+			updates["tags"] = mergeTags(r.Tags, titleTags, nil)
+		}
 	}
 
 	// Handle due date changes

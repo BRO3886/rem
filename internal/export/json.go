@@ -40,6 +40,7 @@ type JSONReminder struct {
 	Flagged          bool                 `json:"flagged"`
 	Completed        bool                 `json:"completed"`
 	URL              string               `json:"url,omitempty"`
+	Tags             []string             `json:"tags,omitempty"`
 	Recurring        bool                 `json:"recurring,omitempty"`
 	RecurrenceRules  []JSONRecurrenceRule `json:"recurrence_rules,omitempty"`
 	Alarms           []JSONAlarm          `json:"alarms"`
@@ -87,6 +88,7 @@ func ToJSON(r *reminder.Reminder) JSONReminder {
 		Flagged:          r.Flagged,
 		Completed:        r.Completed,
 		URL:              r.URL,
+		Tags:             r.Tags,
 		Recurring:        r.Recurring,
 		Alarms:           []JSONAlarm{},
 	}
@@ -145,6 +147,7 @@ func ImportJSON(r io.Reader) ([]*reminder.Reminder, error) {
 			Flagged:   jr.Flagged,
 			Completed: jr.Completed,
 			URL:       jr.URL,
+			Tags:      jr.Tags,
 		}
 
 		if jr.DueDate != nil {

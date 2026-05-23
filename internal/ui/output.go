@@ -173,6 +173,9 @@ func printReminderRichDetail(w io.Writer, r *reminder.Reminder) {
 	if r.URL != "" {
 		fmt.Fprintf(w, "%s %s\n", bold("URL:"), cyan(r.URL))
 	}
+	if len(r.Tags) > 0 {
+		fmt.Fprintf(w, "%s %s\n", bold("Tags:"), cyan("#"+strings.Join(r.Tags, " #")))
+	}
 	if r.DueDate != nil {
 		fmt.Fprintf(w, "%s %s\n", bold("Due:"), r.DueDate.Local().Format("Mon Jan 02, 2006 at 3:04 PM"))
 	}
@@ -234,6 +237,9 @@ func printReminderPlainDetail(w io.Writer, r *reminder.Reminder) {
 	}
 	if r.URL != "" {
 		fmt.Fprintf(w, "URL: %s\n", r.URL)
+	}
+	if len(r.Tags) > 0 {
+		fmt.Fprintf(w, "Tags: #%s\n", strings.Join(r.Tags, " #"))
 	}
 	if r.DueDate != nil {
 		fmt.Fprintf(w, "Due: %s\n", r.DueDate.Local().Format("2006-01-02 15:04"))

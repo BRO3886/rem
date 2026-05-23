@@ -162,6 +162,7 @@ type Reminder struct {
 	Flagged          bool
 	Completed        bool
 	URL              string // native EventKit URL field (backwards compat: extracted from body if empty)
+	Tags             []string
 	Recurring        bool
 	RecurrenceRules  []RecurrenceRule
 	HasAlarms        bool
@@ -178,11 +179,12 @@ type List struct {
 
 // ListFilter specifies criteria for filtering reminders when listing.
 type ListFilter struct {
-	ListName     string
-	Completed    *bool
-	Flagged      *bool
-	DueBefore    *time.Time
-	DueAfter     *time.Time
-	SearchQuery  string
-	PriorityMin  *Priority
+	ListName    string
+	Completed   *bool
+	Flagged     *bool
+	DueBefore   *time.Time
+	DueAfter    *time.Time
+	SearchQuery string
+	Tags        []string
+	PriorityMin *Priority
 }

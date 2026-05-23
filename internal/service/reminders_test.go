@@ -16,16 +16,17 @@ func TestFromEventKitReminder(t *testing.T) {
 	created := now.Add(-48 * time.Hour)
 
 	r := &reminders.Reminder{
-		ID:             "ABC-123",
-		Title:          "Buy groceries",
-		Notes:          "Milk, eggs, bread",
-		List:           "Shopping",
-		DueDate:        &due,
-		CreatedAt:      &created,
-		Priority:       reminders.PriorityHigh,
-		Completed:      false,
-		Flagged:        false,
-		URL:            "https://example.com",
+		ID:        "ABC-123",
+		Title:     "Buy groceries",
+		Notes:     "Milk, eggs, bread",
+		List:      "Shopping",
+		DueDate:   &due,
+		CreatedAt: &created,
+		Priority:  reminders.PriorityHigh,
+		Completed: false,
+		Flagged:   false,
+		URL:       "https://example.com",
+		Tags:      []string{"work", "urgent"},
 	}
 
 	result := fromEventKitReminder(r)
@@ -56,6 +57,9 @@ func TestFromEventKitReminder(t *testing.T) {
 	}
 	if result.URL != "https://example.com" {
 		t.Errorf("URL = %q, want %q", result.URL, "https://example.com")
+	}
+	if len(result.Tags) != 2 || result.Tags[0] != "work" || result.Tags[1] != "urgent" {
+		t.Errorf("Tags = %v, want [work urgent]", result.Tags)
 	}
 }
 
@@ -117,8 +121,8 @@ func TestSortReminders(t *testing.T) {
 	later := now.Add(2 * time.Hour)
 
 	tests := []struct {
-		name     string
-		input    []*reminder.Reminder
+		name      string
+		input     []*reminder.Reminder
 		wantOrder []string // expected Name order after sort
 	}{
 		{
@@ -172,8 +176,8 @@ func TestSortReminders(t *testing.T) {
 			wantOrder: []string{"a", "b"},
 		},
 		{
-			name: "empty slice",
-			input: []*reminder.Reminder{},
+			name:      "empty slice",
+			input:     []*reminder.Reminder{},
 			wantOrder: []string{},
 		},
 		{

@@ -245,6 +245,111 @@ func TestUnflagFilter(t *testing.T) {
 	})
 }
 
+func TestTagsFromTitle(t *testing.T) {
+	tests := []struct {
+		name  string
+		title string
+		want  []string
+	}{
+		{
+			name:  "single tag",
+			title: "Review PR #work",
+			want:  []string{"work"},
+		},
+		{
+			name:  "multiple tags",
+			title: "Review PR #work #urgent",
+			want:  []string{"work", "urgent"},
+		},
+		{
+			name:  "dedupes case-insensitively",
+			title: "Review PR #Work #work",
+			want:  []string{"Work"},
+		},
+		{
+			name:  "trims trailing punctuation",
+			title: "Review PR #work, then deploy #urgent.",
+			want:  []string{"work", "urgent"},
+		},
+		{
+			name:  "ignores issue references",
+			title: "Fix issue #42",
+			want:  nil,
+		},
+		{
+			name:  "ignores bare hash",
+			title: "Look at # and # work",
+			want:  nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tagsFromTitle(tt.title)
+			if len(got) != len(tt.want) {
+				t.Fatalf("tagsFromTitle(%q) = %v, want %v", tt.title, got, tt.want)
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Fatalf("tagsFromTitle(%q) = %v, want %v", tt.title, got, tt.want)
+				}
+			}
+		})
+	}
+}
+
+func TestMergeTags(t *testing.T) {
+	got := mergeTags([]string{"existing", "Work"}, []string{"#work", "new"}, []string{"existing"})
+	want := []string{"Work", "new"}
+	if len(got) != len(want) {
+		t.Fatalf("mergeTags = %v, want %v", got, want)
+	}
+	for i := range got {
+		if got[i] != want[i] {
+			t.Fatalf("mergeTags = %v, want %v", got, want)
+		}
+	}
+}
+
+func TestParseTagList(t *testing.T) {
+	got := parseTagList("work, #urgent, ,Deep Work")
+	want := []string{"work", "urgent", "Deep Work"}
+	if len(got) != len(want) {
+		t.Fatalf("parseTagList = %v, want %v", got, want)
+	}
+	for i := range got {
+		if got[i] != want[i] {
+			t.Fatalf("parseTagList = %v, want %v", got, want)
+		}
+	}
+}
+
+func TestMergeTagInputs(t *testing.T) {
+	got := mergeTagInputs([]string{"title"}, "bulk, #extra")
+	want := []string{"title", "bulk", "extra"}
+	if len(got) != len(want) {
+		t.Fatalf("mergeTagInputs = %v, want %v", got, want)
+	}
+	for i := range got {
+		if got[i] != want[i] {
+			t.Fatalf("mergeTagInputs = %v, want %v", got, want)
+		}
+	}
+}
+
+func TestMergeTagUpdates(t *testing.T) {
+	got := mergeTagUpdates([]string{"existing", "keep"}, []string{"title"}, "bulk,extra", "existing")
+	want := []string{"keep", "title", "bulk", "extra"}
+	if len(got) != len(want) {
+		t.Fatalf("mergeTagUpdates = %v, want %v", got, want)
+	}
+	for i := range got {
+		if got[i] != want[i] {
+			t.Fatalf("mergeTagUpdates = %v, want %v", got, want)
+		}
+	}
+}
+
 func TestBuildAlarms(t *testing.T) {
 	t.Run("no due date, no remind-me: no alarms", func(t *testing.T) {
 		alarms, err := buildAlarms(false, "", false)

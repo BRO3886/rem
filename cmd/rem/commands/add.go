@@ -11,12 +11,13 @@ import (
 )
 
 var (
-	addList       string
-	addDue        string
-	addPriority   string
-	addNotes      string
-	addURL        string
-	addFlagged    bool
+	addList        string
+	addDue         string
+	addPriority    string
+	addNotes       string
+	addURL         string
+	addFlagged     bool
+	addTags        string
 	addRemindMe    string
 	addRepeat      string
 	addInteractive bool
@@ -49,6 +50,7 @@ var addCmd = &cobra.Command{
 			ListName: addList,
 			URL:      addURL,
 			Flagged:  addFlagged,
+			Tags:     mergeTagInputs(tagsFromTitle(args[0]), addTags),
 			Priority: reminder.ParsePriority(addPriority),
 		}
 
@@ -97,6 +99,7 @@ func init() {
 	addCmd.Flags().StringVarP(&addNotes, "notes", "n", "", "Notes/body for the reminder")
 	addCmd.Flags().StringVarP(&addURL, "url", "u", "", "URL to attach to the reminder")
 	addCmd.Flags().BoolVarP(&addFlagged, "flagged", "f", false, "Flag the reminder")
+	addCmd.Flags().StringVar(&addTags, "tags", "", "Comma-separated native tags")
 	addCmd.Flags().StringVar(&addRemindMe, "remind-me", "", "Set alarm: duration before due (15m, 1h, 2d) or absolute time")
 	addCmd.Flags().StringVar(&addRepeat, "repeat", "", "Set recurrence: daily, weekly, 'weekly on mon,wed,fri', monthly, yearly")
 	addCmd.Flags().BoolVar(&addSilent, "silent", false, "Don't auto-attach an alarm when --due is set")

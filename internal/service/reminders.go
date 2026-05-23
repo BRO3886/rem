@@ -4,6 +4,7 @@ package service
 
 import (
 	"fmt"
+	"os"
 	"sort"
 	"time"
 
@@ -36,7 +37,6 @@ func (s *ReminderService) CreateReminder(r *reminder.Reminder) (string, error) {
 		ListName: r.ListName,
 		DueDate:  r.DueDate,
 		Priority: reminders.Priority(r.Priority),
-		Tags:     r.Tags,
 	}
 
 	if r.RemindMeDate != nil {
@@ -65,6 +65,14 @@ func (s *ReminderService) CreateReminder(r *reminder.Reminder) (string, error) {
 	created, err := s.client.CreateReminder(input)
 	if err != nil {
 		return "", fmt.Errorf("failed to create reminder: %w", err)
+	}
+
+	if len(r.Tags) > 0 {
+		tags := r.Tags
+		_, err := s.client.UpdateReminder(created.ID, reminders.UpdateReminderInput{Tags: &tags})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: reminder created but tags could not be saved (private API may be unavailable)\n")
+		}
 	}
 
 	return created.ID, nil
@@ -160,6 +168,7 @@ func sortReminders(result []*reminder.Reminder) {
 
 // UpdateReminder updates properties of an existing reminder.
 func (s *ReminderService) UpdateReminder(id string, updates map[string]any) error {
+	var pendingTags *[]string
 	input := reminders.UpdateReminderInput{}
 
 	for key, value := range updates {
@@ -201,10 +210,10 @@ func (s *ReminderService) UpdateReminder(id string, updates map[string]any) erro
 		case "tags":
 			if value == nil {
 				empty := []string{}
-				input.Tags = &empty
+				pendingTags = &empty
 			} else {
 				v := value.([]string)
-				input.Tags = &v
+				pendingTags = &v
 			}
 		case "list":
 			v := value.(string)
@@ -241,6 +250,13 @@ func (s *ReminderService) UpdateReminder(id string, updates map[string]any) erro
 
 	if _, err := s.client.UpdateReminder(id, input); err != nil {
 		return fmt.Errorf("failed to update reminder: %w", err)
+	}
+
+	if pendingTags != nil {
+		_, err := s.client.UpdateReminder(id, reminders.UpdateReminderInput{Tags: pendingTags})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: reminder updated but tags could not be saved (private API may be unavailable)\n")
+		}
 	}
 
 	return nil

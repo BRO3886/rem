@@ -47,10 +47,6 @@ func (s *ReminderService) CreateReminder(r *reminder.Reminder) (string, error) {
 		input.URL = r.URL
 	}
 
-	if r.Flagged {
-		input.Flagged = true
-	}
-
 	for _, a := range r.Alarms {
 		input.Alarms = append(input.Alarms, reminders.Alarm{
 			AbsoluteDate:   a.AbsoluteDate,
@@ -72,6 +68,14 @@ func (s *ReminderService) CreateReminder(r *reminder.Reminder) (string, error) {
 		_, err := s.client.UpdateReminder(created.ID, reminders.UpdateReminderInput{Tags: &tags})
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: reminder created but tags could not be saved (private API may be unavailable)\n")
+		}
+	}
+
+	if r.Flagged {
+		flagged := true
+		_, err := s.client.UpdateReminder(created.ID, reminders.UpdateReminderInput{Flagged: &flagged})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: reminder created but flag could not be saved (private API may be unavailable)\n")
 		}
 	}
 
@@ -169,6 +173,7 @@ func sortReminders(result []*reminder.Reminder) {
 // UpdateReminder updates properties of an existing reminder.
 func (s *ReminderService) UpdateReminder(id string, updates map[string]any) error {
 	var pendingTags *[]string
+	var pendingFlagged *bool
 	input := reminders.UpdateReminderInput{}
 
 	for key, value := range updates {
@@ -200,7 +205,7 @@ func (s *ReminderService) UpdateReminder(id string, updates map[string]any) erro
 			input.Priority = &p
 		case "flagged":
 			v := value.(bool)
-			input.Flagged = &v
+			pendingFlagged = &v
 		case "completed":
 			v := value.(bool)
 			input.Completed = &v
@@ -256,6 +261,13 @@ func (s *ReminderService) UpdateReminder(id string, updates map[string]any) erro
 		_, err := s.client.UpdateReminder(id, reminders.UpdateReminderInput{Tags: pendingTags})
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: reminder updated but tags could not be saved (private API may be unavailable)\n")
+		}
+	}
+
+	if pendingFlagged != nil {
+		_, err := s.client.UpdateReminder(id, reminders.UpdateReminderInput{Flagged: pendingFlagged})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: reminder updated but flag could not be saved (private API may be unavailable)\n")
 		}
 	}
 

@@ -304,22 +304,18 @@ func (s *ReminderService) UncompleteReminder(id string) error {
 	return nil
 }
 
-// FlagReminder flags a reminder via the private ReminderKit bridge.
+// FlagReminder flags a reminder. It routes through UpdateReminder so the
+// flagged write degrades identically to `add`/`update --flagged`: a genuine
+// error (e.g. reminder not found) is fatal, but if only the private ReminderKit
+// flagged write fails, it warns on stderr and still succeeds.
 func (s *ReminderService) FlagReminder(id string) error {
-	flagged := true
-	if _, err := s.client.UpdateReminder(id, reminders.UpdateReminderInput{Flagged: &flagged}); err != nil {
-		return fmt.Errorf("failed to flag reminder: %w", err)
-	}
-	return nil
+	return s.UpdateReminder(id, map[string]any{"flagged": true})
 }
 
-// UnflagReminder removes the flag from a reminder via the private ReminderKit bridge.
+// UnflagReminder removes the flag from a reminder. See FlagReminder for the
+// shared degradation behavior.
 func (s *ReminderService) UnflagReminder(id string) error {
-	flagged := false
-	if _, err := s.client.UpdateReminder(id, reminders.UpdateReminderInput{Flagged: &flagged}); err != nil {
-		return fmt.Errorf("failed to unflag reminder: %w", err)
-	}
-	return nil
+	return s.UpdateReminder(id, map[string]any{"flagged": false})
 }
 
 // toEventKitRecurrenceRule converts a domain RecurrenceRule to an eventkit RecurrenceRule.

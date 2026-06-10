@@ -53,11 +53,11 @@ Do NOT use rem for:
 | "remind me 15 minutes before" | add `--remind-me 15m` to `rem add` |
 | "make that one silent / no notification" | add `--silent` to `rem add` (not available in `-i` mode, see gotchas) |
 | "tell me more about X" / "show that reminder" | `rem show <short-id>` |
-| "mark X as done" | `rem complete <short-id>` |
-| "undo that / mark X as not done" | `rem uncomplete <short-id>` |
-| "delete X" | `rem delete <short-id>` (supports multiple IDs) |
+| "mark X as done" / "mark these done" | `rem complete <short-id>...` (supports multiple IDs) |
+| "undo that / mark X as not done" | `rem uncomplete <short-id>...` (supports multiple IDs) |
+| "delete X" | `rem delete <short-id>...` (supports multiple IDs) |
 | "find reminders about X" | `rem search "X"` |
-| "flag / unflag X" | `rem flag <short-id>` or `rem unflag <short-id>` |
+| "flag / unflag X" | `rem flag <short-id>...` or `rem unflag <short-id>...` (supports multiple IDs) |
 | "show me flagged stuff" | `rem list --flagged` |
 | "move X to list Y" | `rem update <short-id> --list "Y"` |
 | "change priority to high" | `rem update <short-id> --priority high` |
@@ -72,6 +72,13 @@ Do NOT use rem for:
 | "import this CSV" | `rem import file.csv --dry-run` first, then without |
 
 For full flag details on any command, load [references/commands.md](references/commands.md).
+
+## Batch everything into one tool call
+
+Every `rem` invocation is <200ms, so the expensive part is YOUR round trip, not the command. Two rules:
+
+1. **Multiple IDs, one command.** `complete`, `uncomplete`, `flag`, `unflag`, and `delete` all accept multiple IDs: `rem complete AB12 CD34 EF56`. Never loop one ID per call.
+2. **Multiple commands, one Bash call.** When answering one question needs several rem reads (or independent writes), chain them with `;` and header markers in a single Bash invocation — never run them as separate tool calls. See the daily briefing pattern below.
 
 ## Output formats (always set one when scripting)
 
@@ -117,7 +124,7 @@ rem update AB12 --url ""    # clear
 4. **Flagged and tags use private API.** Both go through Apple's private ReminderKit framework since EventKit doesn't expose these properties. Sub-200ms like everything else, but may break on future macOS versions. Both degrade gracefully — if the private API is unavailable, the reminder is still created/updated (just without the flag/tags) and a warning is printed on stderr. This applies to `flag`/`unflag` too, which behave exactly like `update --flagged`.
 5. **Tags from title are additive.** `#hashtags` in the title are parsed and stored as native Reminders.app tags. They stay in the title text AND become tag objects. Pure numbers like `#42` are ignored (treated as issue references, not tags).
 6. **`rem delete` prompts by default.** Pass `--force` / `--yes` / `-y` when scripting to skip the confirmation.
-7. **`rem add -i` (interactive form) has no `--silent` equivalent.** If a user wants a silent reminder via the interactive flow, create it normally and then run `rem update <id> --remind-me none` to clear the alarm.
+7. **`rem add -i` (interactive form) has no `--silent` equivalent.** If a user wants a silent reminder via the interactive flow, create it then clear the alarm in the same Bash call: `id=$(rem add "Task" --due tomorrow -o json | jq -r '.id'); rem update "$id" --remind-me none`.
 8. **Old reminders with URLs in the notes body** (`URL: https://...`) still read correctly as a backward-compat fallback. New reminders always use the native URL field.
 
 ## Reference files (load when needed)
@@ -127,11 +134,9 @@ rem update AB12 --url ""    # clear
 
 ## Common patterns
 
-### Daily briefing
+### Daily briefing — one tool call, not three
 ```bash
-rem overdue -o plain
-rem today -o plain
-rem upcoming --days 3 -o plain
+{ echo "== OVERDUE =="; rem overdue -o plain; echo "== TODAY =="; rem today -o plain; echo "== NEXT 3 DAYS =="; rem upcoming --days 3 -o plain; }
 ```
 
 ### Scripted cleanup

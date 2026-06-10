@@ -131,28 +131,31 @@ rem update 6ECE --remove-tags "urgent"      # remove tags
 
 ### `rem complete`
 
-Mark a reminder as completed.
+Mark one or more reminders as completed.
 
 ```bash
 rem complete 6ECE
+rem complete 6ECE A1B2 C3D4    # batch complete
 ```
 
 **Aliases:** `done`
 
 ### `rem uncomplete`
 
-Mark a completed reminder as incomplete.
+Mark one or more completed reminders as incomplete.
 
 ```bash
 rem uncomplete 6ECE
+rem uncomplete 6ECE A1B2
 ```
 
 ### `rem flag` / `rem unflag`
 
-Toggle the flag on a reminder.
+Toggle the flag on one or more reminders.
 
 ```bash
 rem flag 6ECE
+rem flag 6ECE A1B2    # batch flag
 rem unflag 6ECE
 ```
 

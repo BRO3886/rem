@@ -69,6 +69,7 @@ Release steps in order — do not skip or reorder:
 ## Conventions
 - Short IDs displayed as first 8 chars of full `x-apple-reminder://UUID` ID
 - Prefix matching: users can pass partial IDs to any command
+- **Multi-ID mutations**: `complete`, `uncomplete`, `flag`, `unflag`, `delete` all accept multiple IDs. Shared helper `runBatchAction` in `cmd/rem/commands/batch.go` resolves all IDs before mutating (fail-fast on a bad ID), continues past per-item errors, exits non-zero if any failed
 - All commands support `-o json|table|plain`
 - `NO_COLOR` env var respected
 - **Interactive mode (`-i`)**: All mutation commands (add, complete, delete, flag, unflag, update, list-mgmt create/rename/delete) support `-i` for huh-based interactive forms. Shared helpers in `huh_helpers.go`. Theme: `ThemeCatppuccin()`. All handle `ErrUserAborted` gracefully.

@@ -101,7 +101,7 @@ rem update abc12345 --remove-tags "urgent"      # Remove tags
 rem update abc12345 -i            # Interactive mode
 ```
 
-**Shared lists.** Moving a reminder to or from a shared list has no true move on macOS: rem copies the reminder to the target and deletes the original, so it gets a **new ID** (rem warns on stderr and prints the new ID). Re-resolve the ID after such a move. Plain moves keep the ID.
+**Shared lists.** Moving a reminder to or from a shared list has no true move on macOS: rem copies the reminder to the target and deletes the original, so it gets a **new ID** (rem warns on stderr and prints the new ID). rem **prompts for confirmation** before such a move — pass `--force`/`-y`/`--yes` to skip it (required when scripting; non-interactive runs error out without it). Re-resolve the ID after such a move. Plain moves keep the ID and never prompt.
 
 **URLs.** `--url` writes to the native Reminders.app URL field (not notes/body). Pass `--url ""` to clear the URL.
 
@@ -111,6 +111,7 @@ rem update abc12345 -i            # Interactive mode
 |------|-------|-------------|---------|
 | `--name` | — | New title | — |
 | `--list` | `-l` | Move reminder to a different list | — |
+| `--force` / `--yes` | `-y` | Skip the shared-list move confirmation | false |
 | `--due` | `-d` | New due date (use `none` to clear) | — |
 | `--notes` | `-n` | New notes/body | — |
 | `--priority` | `-p` | New priority: high, medium, low, none | — |

@@ -114,7 +114,7 @@ rem update 6ECE --remove-tags "urgent"      # remove tags
 
 `--add-tags` and `--remove-tags` accept comma-separated tag names. Tags in `--name` are also parsed as hashtags. Tags use the private ReminderKit API and degrade gracefully if unavailable.
 
-`--list` moves the reminder. Plain moves are native and keep the reminder's ID. Moving to or from a **shared list** is different: macOS has no true move across that boundary (Apple's own apps copy and delete behind the scenes), so rem copies the reminder — all fields preserved, including completed state — deletes the original, and prints a warning with the **new ID** on stderr. Re-resolve the ID after such a move.
+`--list` moves the reminder. Plain moves are native and keep the reminder's ID. Moving to or from a **shared list** is different: macOS has no true move across that boundary (Apple's own apps copy and delete behind the scenes), so rem copies the reminder — all fields preserved, including completed state — deletes the original, and prints a warning with the **new ID** on stderr. Because the ID changes, rem **asks for confirmation** before a shared-list move; pass `--force`/`-y` to skip the prompt (required in scripts — non-interactive runs refuse without it, same as `rem delete`). Re-resolve the ID after such a move.
 
 | Flag | Description |
 |------|-------------|
@@ -129,6 +129,7 @@ rem update 6ECE --remove-tags "urgent"      # remove tags
 | `--remove-tags` | Remove comma-separated native tags |
 | `--remind-me` | Set alarm: duration (`15m`, `1h`, `2d`), `none` to clear |
 | `--repeat` | Set recurrence: `daily`, `weekly`, `monthly`, `yearly`, `none` to clear |
+| `-y, --force`, `--yes` | Skip the shared-list move confirmation |
 | `-i, --interactive` | Interactive update |
 
 ### `rem complete`

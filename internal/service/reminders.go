@@ -180,7 +180,7 @@ func (s *ReminderService) UpdateReminder(id string, updates map[string]any) erro
 	// Detection errors fall through to the native move so plain moves are
 	// never blocked by the sharing check.
 	if v, ok := updates["list"]; ok {
-		if sharedList, crosses := s.moveCrossesSharedList(id, v.(string)); crosses {
+		if sharedList, crosses := s.MoveCrossesSharedList(id, v.(string)); crosses {
 			delete(updates, "list")
 			if len(updates) > 0 {
 				if err := s.UpdateReminder(id, updates); err != nil {
@@ -293,11 +293,12 @@ func (s *ReminderService) UpdateReminder(id string, updates map[string]any) erro
 	return nil
 }
 
-// moveCrossesSharedList reports whether moving the reminder to targetList
+// MoveCrossesSharedList reports whether moving the reminder to targetList
 // involves a shared list on either end, and returns the name of the shared
 // list. Lookup failures report false — the native move path handles its own
-// errors (e.g. target list not found).
-func (s *ReminderService) moveCrossesSharedList(id, targetList string) (string, bool) {
+// errors (e.g. target list not found). Commands use this to confirm with the
+// user before a move that will be performed as copy + delete.
+func (s *ReminderService) MoveCrossesSharedList(id, targetList string) (string, bool) {
 	r, err := s.client.Reminder(id)
 	if err != nil {
 		return "", false

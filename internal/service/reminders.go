@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"time"
 
 	eventkit "github.com/BRO3886/go-eventkit"
@@ -172,6 +173,24 @@ func sortReminders(result []*reminder.Reminder) {
 
 // UpdateReminder updates properties of an existing reminder.
 func (s *ReminderService) UpdateReminder(id string, updates map[string]any) error {
+	// A move involving a shared list cannot be done natively: ReminderKit
+	// rejects it at the account-capability level, and Apple's own paths
+	// (Reminders.app, AppleScript) fall back to copy + delete. Detect the
+	// boundary up front and do the same, warning that the ID changes.
+	// Detection errors fall through to the native move so plain moves are
+	// never blocked by the sharing check.
+	if v, ok := updates["list"]; ok {
+		if sharedList, crosses := s.moveCrossesSharedList(id, v.(string)); crosses {
+			delete(updates, "list")
+			if len(updates) > 0 {
+				if err := s.UpdateReminder(id, updates); err != nil {
+					return err
+				}
+			}
+			return s.moveViaCopy(id, v.(string), sharedList)
+		}
+	}
+
 	var pendingTags *[]string
 	var pendingFlagged *bool
 	input := reminders.UpdateReminderInput{}
@@ -272,6 +291,83 @@ func (s *ReminderService) UpdateReminder(id string, updates map[string]any) erro
 	}
 
 	return nil
+}
+
+// moveCrossesSharedList reports whether moving the reminder to targetList
+// involves a shared list on either end, and returns the name of the shared
+// list. Lookup failures report false — the native move path handles its own
+// errors (e.g. target list not found).
+func (s *ReminderService) moveCrossesSharedList(id, targetList string) (string, bool) {
+	r, err := s.client.Reminder(id)
+	if err != nil {
+		return "", false
+	}
+	lists, err := s.client.Lists()
+	if err != nil {
+		return "", false
+	}
+	for i := range lists {
+		l := &lists[i]
+		if !l.IsShared {
+			continue
+		}
+		if strings.EqualFold(l.Title, r.List) || strings.EqualFold(l.Title, targetList) {
+			return l.Title, true
+		}
+	}
+	return "", false
+}
+
+// moveViaCopy moves a reminder to targetList by creating a copy there and
+// deleting the original. The copy gets a new ID; a warning on stderr says so.
+func (s *ReminderService) moveViaCopy(id, targetList, sharedList string) error {
+	r, err := s.client.Reminder(id)
+	if err != nil {
+		return fmt.Errorf("reminder not found: %s", id)
+	}
+
+	input := reminders.CreateReminderInput{
+		Title:           r.Title,
+		Notes:           r.Notes,
+		ListName:        targetList,
+		DueDate:         r.DueDate,
+		RemindMeDate:    r.RemindMeDate,
+		Priority:        r.Priority,
+		URL:             r.URL,
+		Flagged:         r.Flagged,
+		Tags:            r.Tags,
+		Alarms:          r.Alarms,
+		RecurrenceRules: r.RecurrenceRules,
+	}
+	created, err := s.client.CreateReminder(input)
+	if err != nil {
+		return fmt.Errorf("failed to move reminder to '%s': %w", targetList, err)
+	}
+
+	if r.Completed {
+		if _, err := s.client.CompleteReminder(created.ID); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: moved reminder could not be marked completed: %v\n", err)
+		}
+	}
+
+	if err := s.client.DeleteReminder(r.ID); err != nil {
+		return fmt.Errorf("copied reminder to '%s' (new ID: %s) but failed to delete the original: %w",
+			targetList, shortIDOf(created.ID), err)
+	}
+
+	fmt.Fprintf(os.Stderr,
+		"Warning: '%s' is a shared list — macOS does not support a true move, so the reminder was copied and the original deleted. New ID: %s\n",
+		sharedList, shortIDOf(created.ID))
+	return nil
+}
+
+// shortIDOf returns the first 8 characters of a reminder's UUID for display.
+func shortIDOf(id string) string {
+	s := strings.TrimPrefix(id, "x-apple-reminder://")
+	if len(s) > 8 {
+		return s[:8]
+	}
+	return s
 }
 
 // DeleteReminder deletes a reminder by ID.

@@ -175,6 +175,12 @@ type List struct {
 	Name  string
 	Color string
 	Count int // number of reminders in the list
+	// IsShared is true if the list is shared with other participants.
+	IsShared bool
+	// SharedToMe is true if someone else shared the list with the current user.
+	SharedToMe bool
+	// IsOwnedByMe is true if the current user owns the list.
+	IsOwnedByMe bool
 }
 
 // ListFilter specifies criteria for filtering reminders when listing.

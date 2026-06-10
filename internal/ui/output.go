@@ -77,10 +77,14 @@ func PrintLists(w io.Writer, lists []*reminder.List, format OutputFormat, showCo
 		enc.Encode(lists)
 	case FormatPlain:
 		for _, l := range lists {
+			name := l.Name
+			if l.IsShared {
+				name += " [shared]"
+			}
 			if showCount {
-				fmt.Fprintf(w, "%s (%d)\n", l.Name, l.Count)
+				fmt.Fprintf(w, "%s (%d)\n", name, l.Count)
 			} else {
-				fmt.Fprintln(w, l.Name)
+				fmt.Fprintln(w, name)
 			}
 		}
 	default:
@@ -283,10 +287,14 @@ func printListsTable(w io.Writer, lists []*reminder.List, showCount bool) {
 	}
 
 	for _, l := range lists {
+		name := l.Name
+		if l.IsShared {
+			name += " (shared)"
+		}
 		if showCount {
-			table.Append([]string{l.Name, fmt.Sprintf("%d", l.Count)})
+			table.Append([]string{name, fmt.Sprintf("%d", l.Count)})
 		} else {
-			table.Append([]string{l.Name})
+			table.Append([]string{name})
 		}
 	}
 

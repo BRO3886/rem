@@ -31,12 +31,12 @@ sudo mv rem /usr/local/bin/rem
 rem add "title" [--due DATE] [--priority high|medium|low|none] [--list NAME] [--notes TEXT] [--url URL] [--flagged] [--remind-me DURATION] [--silent] [--repeat PATTERN] [-i]
 rem list [--list NAME] [--incomplete] [--completed] [--flagged] [--due-before DATE] [--due-after DATE] [-s QUERY]
 rem show ID
-rem update ID [--name TEXT] [--due DATE] [--priority LEVEL] [--notes TEXT] [--url URL] [--flagged true|false] [--remind-me DURATION] [--repeat PATTERN] [--list NAME] [-i]
+rem update ID [--title TEXT] [--due DATE] [--priority LEVEL] [--notes TEXT] [--url URL] [--flagged] [--remind-me DURATION] [--repeat PATTERN] [--list NAME] [-i]
 rem complete ID
 rem uncomplete ID
 rem flag ID
 rem unflag ID
-rem delete ID [ID2 ID3...] [--force/--yes/-y]
+rem delete ID [ID2 ID3...] [--force/-f/--yes/-y]
 rem search QUERY [--list NAME] [--incomplete]
 rem stats
 rem today [--list NAME]

@@ -53,7 +53,7 @@ https://rem.sidv.dev/docs — use --dry-run to preview what will be written.`,
 }
 
 func init() {
-	skillsInstallCmd.Flags().StringVar(&skillsAgentFlag, "agent", "", "Agent target: claude, codex, openclaw, or all")
+	skillsInstallCmd.Flags().StringVarP(&skillsAgentFlag, "agent", "a", "", "Agent target: claude, codex, openclaw, or all")
 	skillsInstallCmd.Flags().BoolVar(&skillsInstallDryRun, "dry-run", false, "Preview what would be installed without writing anything")
 	skillsCmd.AddCommand(skillsInstallCmd)
 }
@@ -175,7 +175,7 @@ var skillsUninstallCmd = &cobra.Command{
 }
 
 func init() {
-	skillsUninstallCmd.Flags().StringVar(&skillsAgentFlag, "agent", "", "Agent target: claude, codex, openclaw, or all")
+	skillsUninstallCmd.Flags().StringVarP(&skillsAgentFlag, "agent", "a", "", "Agent target: claude, codex, openclaw, or all")
 	skillsCmd.AddCommand(skillsUninstallCmd)
 }
 

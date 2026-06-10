@@ -101,6 +101,8 @@ rem update abc12345 --remove-tags "urgent"      # Remove tags
 rem update abc12345 -i            # Interactive mode
 ```
 
+**Shared lists.** Moving a reminder to or from a shared list has no true move on macOS: rem copies the reminder to the target and deletes the original, so it gets a **new ID** (rem warns on stderr and prints the new ID). Re-resolve the ID after such a move. Plain moves keep the ID.
+
 **URLs.** `--url` writes to the native Reminders.app URL field (not notes/body). Pass `--url ""` to clear the URL.
 
 **Tags.** `--add-tags` and `--remove-tags` accept comma-separated tag names. Tags in `--name` are also parsed (e.g. `--name "Task #work"` adds the `work` tag). Tags use the private ReminderKit API and degrade gracefully if unavailable.

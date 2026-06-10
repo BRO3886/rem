@@ -161,9 +161,12 @@ func (s *ListService) GetDefaultListName() (string, error) {
 // fromEventKitList converts a go-eventkit List to an internal List.
 func fromEventKitList(l *reminders.List) *reminder.List {
 	return &reminder.List{
-		ID:    l.ID,
-		Name:  l.Title,
-		Color: l.Color,
-		Count: l.Count,
+		ID:          l.ID,
+		Name:        l.Title,
+		Color:       l.Color,
+		Count:       l.Count,
+		IsShared:    l.IsShared,
+		SharedToMe:  l.SharedToMe,
+		IsOwnedByMe: l.IsOwnedByMe,
 	}
 }

@@ -3,7 +3,7 @@ name: rem-cli
 description: Create, list, update, complete, tag, and search macOS Reminders via the rem CLI. Use when the user wants to manage Apple Reminders from the terminal, automate reminder workflows, reference reminders in shell scripts, or schedule anything on macOS.
 license: MIT
 compatibility: Requires macOS with the rem CLI installed (https://rem.sidv.dev)
-allowed-tools: Bash(rem *)
+allowed-tools: Bash(rem *) Bash(echo *)
 argument-hint: "[natural language request]"
 metadata:
   author: BRO3886
@@ -136,8 +136,10 @@ rem update AB12 --url ""    # clear
 
 ### Daily briefing — one tool call, not three
 ```bash
-{ echo "== OVERDUE =="; rem overdue -o plain; echo "== TODAY =="; rem today -o plain; echo "== NEXT 3 DAYS =="; rem upcoming --days 3 -o plain; }
+echo "== OVERDUE =="; rem overdue -o plain; echo "== TODAY =="; rem today -o plain; echo "== NEXT 3 DAYS =="; rem upcoming --days 3 -o plain
 ```
+
+Chain with plain `;` (no `{ }` subshell grouping, no `$(...)` substitution) — permission allowlists check each `;`-separated segment, and `rem`/`echo` are pre-approved by this skill.
 
 ### Scripted cleanup
 ```bash

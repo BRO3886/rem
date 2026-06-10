@@ -16,10 +16,11 @@ var (
 )
 
 var completeCmd = &cobra.Command{
-	Use:     "complete [id]",
+	Use:     "complete [id...]",
 	Aliases: []string{"done"},
-	Short:   "Mark a reminder as complete",
+	Short:   "Mark one or more reminders as complete",
 	Example: `  rem complete abc12345
+  rem complete abc12345 def67890
   rem done abc12345
   rem complete -i
   rem complete -i --list Work --flagged`,
@@ -27,55 +28,34 @@ var completeCmd = &cobra.Command{
 		if completeInteractive {
 			return cobra.MaximumNArgs(0)(cmd, args)
 		}
-		return cobra.ExactArgs(1)(cmd, args)
+		return cobra.MinimumNArgs(1)(cmd, args)
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if completeInteractive {
 			return runCompleteInteractive(false)
 		}
-
-		r, err := findReminderByID(args[0])
-		if err != nil {
-			return err
-		}
-
-		if err := reminderSvc.CompleteReminder(r.ID); err != nil {
-			return err
-		}
-
-		fmt.Printf("Completed: %s\n", r.Name)
-		return nil
+		return runBatchAction(args, "Completed", reminderSvc.CompleteReminder)
 	},
 }
 
 var uncompleteCmd = &cobra.Command{
-	Use:   "uncomplete [id]",
-	Short: "Mark a reminder as incomplete",
+	Use:   "uncomplete [id...]",
+	Short: "Mark one or more reminders as incomplete",
 	Example: `  rem uncomplete abc12345
+  rem uncomplete abc12345 def67890
   rem uncomplete -i
   rem uncomplete -i --list Work`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if uncompleteInteractive {
 			return cobra.MaximumNArgs(0)(cmd, args)
 		}
-		return cobra.ExactArgs(1)(cmd, args)
+		return cobra.MinimumNArgs(1)(cmd, args)
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if uncompleteInteractive {
 			return runCompleteInteractive(true)
 		}
-
-		r, err := findReminderByID(args[0])
-		if err != nil {
-			return err
-		}
-
-		if err := reminderSvc.UncompleteReminder(r.ID); err != nil {
-			return err
-		}
-
-		fmt.Printf("Marked incomplete: %s\n", r.Name)
-		return nil
+		return runBatchAction(args, "Marked incomplete", reminderSvc.UncompleteReminder)
 	},
 }
 

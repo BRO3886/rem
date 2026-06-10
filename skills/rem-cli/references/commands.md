@@ -144,10 +144,11 @@ Aliases: `rm`, `remove`
 
 ## rem complete
 
-Mark a reminder as complete.
+Mark one or more reminders as complete.
 
 ```bash
 rem complete abc12345
+rem complete abc12345 def67890
 rem done abc12345
 ```
 
@@ -157,30 +158,33 @@ Aliases: `done`
 
 ## rem uncomplete
 
-Mark a reminder as incomplete.
+Mark one or more reminders as incomplete.
 
 ```bash
 rem uncomplete abc12345
+rem uncomplete abc12345 def67890
 ```
 
 ---
 
 ## rem flag
 
-Flag a reminder.
+Flag one or more reminders.
 
 ```bash
 rem flag abc12345
+rem flag abc12345 def67890
 ```
 
 ---
 
 ## rem unflag
 
-Remove flag from a reminder.
+Remove flag from one or more reminders.
 
 ```bash
 rem unflag abc12345
+rem unflag abc12345 def67890
 ```
 
 ---

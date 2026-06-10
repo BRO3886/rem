@@ -15,64 +15,44 @@ var (
 )
 
 var flagCmd = &cobra.Command{
-	Use:   "flag [id]",
-	Short: "Flag a reminder",
+	Use:   "flag [id...]",
+	Short: "Flag one or more reminders",
 	Example: `  rem flag abc12345
+  rem flag abc12345 def67890
   rem flag -i
   rem flag -i --list Work`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if flagInteractive {
 			return cobra.MaximumNArgs(0)(cmd, args)
 		}
-		return cobra.ExactArgs(1)(cmd, args)
+		return cobra.MinimumNArgs(1)(cmd, args)
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if flagInteractive {
 			return runFlagInteractive(flagList)
 		}
-
-		r, err := findReminderByID(args[0])
-		if err != nil {
-			return err
-		}
-
-		if err := reminderSvc.FlagReminder(r.ID); err != nil {
-			return err
-		}
-
-		fmt.Printf("Flagged: %s\n", r.Name)
-		return nil
+		return runBatchAction(args, "Flagged", reminderSvc.FlagReminder)
 	},
 }
 
 var unflagCmd = &cobra.Command{
-	Use:   "unflag [id]",
-	Short: "Remove flag from a reminder",
+	Use:   "unflag [id...]",
+	Short: "Remove flag from one or more reminders",
 	Example: `  rem unflag abc12345
+  rem unflag abc12345 def67890
   rem unflag -i
   rem unflag -i --list Work`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if unflagInteractive {
 			return cobra.MaximumNArgs(0)(cmd, args)
 		}
-		return cobra.ExactArgs(1)(cmd, args)
+		return cobra.MinimumNArgs(1)(cmd, args)
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if unflagInteractive {
 			return runUnflagInteractive(unflagList)
 		}
-
-		r, err := findReminderByID(args[0])
-		if err != nil {
-			return err
-		}
-
-		if err := reminderSvc.UnflagReminder(r.ID); err != nil {
-			return err
-		}
-
-		fmt.Printf("Unflagged: %s\n", r.Name)
-		return nil
+		return runBatchAction(args, "Unflagged", reminderSvc.UnflagReminder)
 	},
 }
 

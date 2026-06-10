@@ -120,14 +120,14 @@ rem get <id> -o json
 # Update
 rem update <id> [--name TEXT] [--due DATE] [--priority LEVEL] [--notes TEXT] [--url URL] [--add-tags TAGS] [--remove-tags TAGS] [--remind-me DURATION] [--repeat PATTERN] [--list LIST]
 
-# Complete / Uncomplete
-rem complete <id>
+# Complete / Uncomplete (support multiple IDs)
+rem complete <id> [id2 id3...]
 rem done <id>                       # Alias
-rem uncomplete <id>
+rem uncomplete <id> [id2 id3...]
 
-# Flag / Unflag
-rem flag <id>
-rem unflag <id>
+# Flag / Unflag (support multiple IDs)
+rem flag <id> [id2 id3...]
+rem unflag <id> [id2 id3...]
 
 # Delete (supports multiple IDs)
 rem delete <id> [id2 id3...]        # Asks for confirmation

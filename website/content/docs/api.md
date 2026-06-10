@@ -159,6 +159,9 @@ err := client.DeleteReminder(id)
 lists, err := client.Lists()
 for _, l := range lists {
     fmt.Printf("%s (%d reminders, source: %s)\n", l.Title, l.Count, l.Source)
+    if l.IsShared { // sharing state: IsShared, SharedToMe, IsOwnedByMe (go-eventkit ≥ v0.12.0)
+        fmt.Println("  shared list — moves in/out will be copy+delete")
+    }
 }
 
 // Create a list

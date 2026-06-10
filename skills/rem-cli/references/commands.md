@@ -404,16 +404,18 @@ rem completion fish > ~/.config/fish/completions/rem.fish
 Install the rem agent skill for AI coding agents.
 
 ```bash
-rem skills install                          # Interactive picker
+rem skills install                          # Interactive picker (shows confirmation prompt)
 rem skills install --agent claude           # Install for Claude Code only
 rem skills install --agent codex            # Install for Codex CLI only
 rem skills install --agent openclaw         # Install for OpenClaw only
 rem skills install --agent all              # Install for all agents
+rem skills install --dry-run               # Preview files without writing
 ```
 
 | Flag | Description | Default |
 |------|-------------|---------|
 | `--agent` | Agent target: claude, codex, openclaw, or all | Interactive picker |
+| `--dry-run` | Preview what would be installed without writing anything | false |
 
 Supported targets:
 - `claude`   → `~/.claude/skills/rem-cli/`    (Claude Code, Copilot, Cursor, OpenCode, Augment)

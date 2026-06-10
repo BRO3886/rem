@@ -208,11 +208,12 @@ rem list --no-color
 ### AI Agent Skills
 
 ```bash
-rem skills install                 # Interactive picker
-rem skills install --agent claude  # Claude Code only
-rem skills install --agent all     # All supported agents
-rem skills status                  # Check installation status
-rem skills uninstall               # Remove the skill
+rem skills install                          # Interactive picker (shows confirmation prompt)
+rem skills install --agent claude           # Claude Code only
+rem skills install --agent all             # All supported agents
+rem skills install --dry-run              # Preview files without writing
+rem skills status                          # Check installation status
+rem skills uninstall                       # Remove the skill
 ```
 
 ### Shell Completions

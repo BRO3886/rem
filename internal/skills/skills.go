@@ -39,6 +39,9 @@ func DefaultTargets(homeDir string) []AgentTarget {
 const skillDirName = "rem-cli"
 const versionFileName = ".rem-version"
 
+// VersionFileName is the name of the version tracking file written alongside skill files.
+const VersionFileName = versionFileName
+
 // SkillDir returns the full path to the skill directory for a given target.
 func SkillDir(target AgentTarget) string {
 	return filepath.Join(target.BaseDir, skillDirName)

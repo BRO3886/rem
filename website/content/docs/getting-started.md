@@ -136,7 +136,7 @@ rem ships with an embedded skill that teaches AI coding agents (Claude Code, Cod
 rem skills install
 ```
 
-This copies the skill files to the agent's skill directory (e.g. `~/.claude/skills/rem-cli/`). The skill includes command references, date parsing docs, and usage examples.
+This copies the skill files to the agent's skill directory (e.g. `~/.claude/skills/rem-cli/`). The skill includes command references, date parsing docs, and usage examples. On a TTY you'll see a brief explanation and a confirmation prompt before anything is written — use `--dry-run` to preview the exact files first.
 
 ```bash
 rem skills status      # Check installation status

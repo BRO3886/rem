@@ -49,7 +49,7 @@ rem list-mgmt delete NAME [--force/--yes/-y]
 rem export [--list NAME] [--format json|csv] [--output-file PATH] [--incomplete]
 rem import FILE [--list NAME] [--dry-run]
 rem interactive  (alias: rem i)
-rem skills install [--agent claude|codex|openclaw|all]
+rem skills install [--agent claude|codex|openclaw|all] [--dry-run]
 rem skills uninstall [--agent claude|codex|openclaw|all]
 rem skills status
 rem version
@@ -134,11 +134,12 @@ AppleScript/JXA sends Apple Events over Mach IPC — one event per property per 
 
 rem ships with an embedded agent skill that teaches AI coding assistants how to use it:
 
-rem skills install                  # Interactive picker (Claude, Codex, OpenClaw)
-rem skills install --agent claude   # Claude Code only (~/.claude/skills/rem-cli/)
-rem skills install --agent codex    # Codex CLI only (~/.agents/skills/rem-cli/)
-rem skills install --agent openclaw # OpenClaw only (~/.openclaw/skills/rem-cli/)
-rem skills install --agent all      # All supported agents
+rem skills install                   # Interactive picker (shows confirmation prompt)
+rem skills install --agent claude    # Claude Code only (~/.claude/skills/rem-cli/)
+rem skills install --agent codex     # Codex CLI only (~/.agents/skills/rem-cli/)
+rem skills install --agent openclaw  # OpenClaw only (~/.openclaw/skills/rem-cli/)
+rem skills install --agent all       # All supported agents
+rem skills install --dry-run         # Preview files without writing
 rem skills status                   # Show installation status
 rem skills uninstall --agent all    # Remove skills
 

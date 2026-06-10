@@ -45,14 +45,44 @@ func ParsePriority(s string) Priority {
 	}
 }
 
+// AlarmLocation is a geofence trigger attached to an alarm.
+type AlarmLocation struct {
+	Title     string
+	Latitude  float64
+	Longitude float64
+	Radius    float64 // meters; 0 = system default
+	Proximity string  // "enter" (arrive) or "leave"
+}
+
+// String returns a human-readable description of the location trigger.
+func (l AlarmLocation) String() string {
+	verb := "on arriving at"
+	if l.Proximity == "leave" {
+		verb = "on leaving"
+	}
+	name := l.Title
+	if name == "" {
+		name = fmt.Sprintf("%.4f,%.4f", l.Latitude, l.Longitude)
+	}
+	s := fmt.Sprintf("%s %s", verb, name)
+	if l.Radius > 0 {
+		s += fmt.Sprintf(" (within %.0fm)", l.Radius)
+	}
+	return s
+}
+
 // Alarm represents a reminder notification alert.
 type Alarm struct {
 	AbsoluteDate   *time.Time
 	RelativeOffset time.Duration // negative = before due date
+	Location       *AlarmLocation
 }
 
 // FormatAlarm returns a human-readable description of the alarm.
 func (a Alarm) String() string {
+	if a.Location != nil {
+		return a.Location.String()
+	}
 	if a.AbsoluteDate != nil {
 		return a.AbsoluteDate.Local().Format("Mon Jan 02, 2006 at 3:04 PM")
 	}

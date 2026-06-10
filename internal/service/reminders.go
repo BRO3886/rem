@@ -49,10 +49,7 @@ func (s *ReminderService) CreateReminder(r *reminder.Reminder) (string, error) {
 	}
 
 	for _, a := range r.Alarms {
-		input.Alarms = append(input.Alarms, reminders.Alarm{
-			AbsoluteDate:   a.AbsoluteDate,
-			RelativeOffset: a.RelativeOffset,
-		})
+		input.Alarms = append(input.Alarms, toEventKitAlarm(a))
 	}
 
 	for _, rr := range r.RecurrenceRules {
@@ -250,10 +247,7 @@ func (s *ReminderService) UpdateReminder(id string, updates map[string]any) erro
 				alarms := value.([]reminder.Alarm)
 				ekAlarms := make([]reminders.Alarm, len(alarms))
 				for i, a := range alarms {
-					ekAlarms[i] = reminders.Alarm{
-						AbsoluteDate:   a.AbsoluteDate,
-						RelativeOffset: a.RelativeOffset,
-					}
+					ekAlarms[i] = toEventKitAlarm(a)
 				}
 				input.Alarms = &ekAlarms
 			}
@@ -415,6 +409,24 @@ func (s *ReminderService) UnflagReminder(id string) error {
 	return s.UpdateReminder(id, map[string]any{"flagged": false})
 }
 
+// toEventKitAlarm converts a domain Alarm to a go-eventkit Alarm.
+func toEventKitAlarm(a reminder.Alarm) reminders.Alarm {
+	alarm := reminders.Alarm{
+		AbsoluteDate:   a.AbsoluteDate,
+		RelativeOffset: a.RelativeOffset,
+	}
+	if a.Location != nil {
+		alarm.Location = &eventkit.StructuredLocation{
+			Title:     a.Location.Title,
+			Latitude:  a.Location.Latitude,
+			Longitude: a.Location.Longitude,
+			Radius:    a.Location.Radius,
+		}
+		alarm.Proximity = reminders.AlarmProximity(a.Location.Proximity)
+	}
+	return alarm
+}
+
 // toEventKitRecurrenceRule converts a domain RecurrenceRule to an eventkit RecurrenceRule.
 func toEventKitRecurrenceRule(rr reminder.RecurrenceRule) eventkit.RecurrenceRule {
 	switch rr.Frequency {
@@ -472,10 +484,20 @@ func fromEventKitReminder(r *reminders.Reminder) *reminder.Reminder {
 
 	// Map alarms
 	for _, a := range r.Alarms {
-		result.Alarms = append(result.Alarms, reminder.Alarm{
+		alarm := reminder.Alarm{
 			AbsoluteDate:   a.AbsoluteDate,
 			RelativeOffset: a.RelativeOffset,
-		})
+		}
+		if a.Location != nil {
+			alarm.Location = &reminder.AlarmLocation{
+				Title:     a.Location.Title,
+				Latitude:  a.Location.Latitude,
+				Longitude: a.Location.Longitude,
+				Radius:    a.Location.Radius,
+				Proximity: string(a.Proximity),
+			}
+		}
+		result.Alarms = append(result.Alarms, alarm)
 	}
 
 	// For backwards compatibility: if URL is empty but notes contain a URL, extract it

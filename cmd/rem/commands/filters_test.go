@@ -455,3 +455,101 @@ func TestBuildAlarms(t *testing.T) {
 	// Silence the unused import warning if reminder package stops being referenced.
 	_ = reminder.Alarm{}
 }
+
+func TestParseLocationAlarm(t *testing.T) {
+	t.Run("valid coordinates default to arrive", func(t *testing.T) {
+		a, err := parseLocationAlarm("37.3318,-122.0312", 0, false, false)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if a.Location == nil {
+			t.Fatal("Location should not be nil")
+		}
+		if a.Location.Latitude != 37.3318 || a.Location.Longitude != -122.0312 {
+			t.Errorf("coords = %f,%f", a.Location.Latitude, a.Location.Longitude)
+		}
+		if a.Location.Proximity != "enter" {
+			t.Errorf("Proximity = %q, want enter (default)", a.Location.Proximity)
+		}
+		if a.Location.Radius != 0 {
+			t.Errorf("Radius = %f, want 0 (system default)", a.Location.Radius)
+		}
+		if a.Location.Title == "" {
+			t.Error("Title should default to the coordinate string")
+		}
+	})
+
+	t.Run("on-leave and radius", func(t *testing.T) {
+		a, err := parseLocationAlarm(" 37.33 , -122.03 ", 200, false, true)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if a.Location.Proximity != "leave" {
+			t.Errorf("Proximity = %q, want leave", a.Location.Proximity)
+		}
+		if a.Location.Radius != 200 {
+			t.Errorf("Radius = %f, want 200", a.Location.Radius)
+		}
+	})
+
+	t.Run("explicit on-arrive", func(t *testing.T) {
+		a, err := parseLocationAlarm("0,0", 0, true, false)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if a.Location.Proximity != "enter" {
+			t.Errorf("Proximity = %q, want enter", a.Location.Proximity)
+		}
+	})
+
+	t.Run("errors", func(t *testing.T) {
+		cases := []struct {
+			name     string
+			location string
+			radius   float64
+			arrive   bool
+			leave    bool
+		}{
+			{"both proximity flags", "1,2", 0, true, true},
+			{"missing longitude", "37.33", 0, false, false},
+			{"too many parts", "1,2,3", 0, false, false},
+			{"non-numeric", "north,south", 0, false, false},
+			{"latitude out of range", "91,0", 0, false, false},
+			{"longitude out of range", "0,181", 0, false, false},
+			{"negative radius", "1,2", -5, false, false},
+			{"empty", "", 0, false, false},
+		}
+		for _, tc := range cases {
+			t.Run(tc.name, func(t *testing.T) {
+				if _, err := parseLocationAlarm(tc.location, tc.radius, tc.arrive, tc.leave); err == nil {
+					t.Errorf("parseLocationAlarm(%q, %v, %v, %v) should error", tc.location, tc.radius, tc.arrive, tc.leave)
+				}
+			})
+		}
+	})
+}
+
+func TestSplitAlarmsByTrigger(t *testing.T) {
+	loc := &reminder.AlarmLocation{Latitude: 1, Longitude: 2, Proximity: "enter"}
+	alarms := []reminder.Alarm{
+		{RelativeOffset: 0},
+		{Location: loc},
+		{RelativeOffset: -15 * time.Minute},
+	}
+
+	timeAlarms, locationAlarms := splitAlarmsByTrigger(alarms)
+	if len(timeAlarms) != 2 {
+		t.Errorf("timeAlarms = %d, want 2", len(timeAlarms))
+	}
+	if len(locationAlarms) != 1 {
+		t.Errorf("locationAlarms = %d, want 1", len(locationAlarms))
+	}
+	if locationAlarms[0].Location != loc {
+		t.Error("location alarm not preserved")
+	}
+
+	timeAlarms, locationAlarms = splitAlarmsByTrigger(nil)
+	if timeAlarms != nil || locationAlarms != nil {
+		t.Error("nil input should produce nil buckets")
+	}
+}

@@ -23,6 +23,10 @@ var (
 	updateRepeat         string
 	updateInteractive    bool
 	updateForce          bool
+	updateLocation       string
+	updateRadius         float64
+	updateOnArrive       bool
+	updateOnLeave        bool
 )
 
 var updateCmd = &cobra.Command{
@@ -37,6 +41,8 @@ var updateCmd = &cobra.Command{
   rem update abc12345 --remind-me 15m
   rem update abc12345 --repeat "weekly on mon,fri"
   rem update abc12345 --repeat none
+  rem update abc12345 --location "37.3318,-122.0312" --on-leave
+  rem update abc12345 --location none
   rem update -i
   rem update -i abc12345`,
 	Args: func(cmd *cobra.Command, args []string) error {
@@ -99,15 +105,42 @@ var updateCmd = &cobra.Command{
 		if cmd.Flags().Changed("list") {
 			updates["list"] = updateList
 		}
-		if cmd.Flags().Changed("remind-me") {
-			if updateRemindMe == "" || updateRemindMe == "none" {
+		// --remind-me replaces only time alarms; --location replaces only
+		// location alarms. Each preserves the other kind.
+		remindChanged := cmd.Flags().Changed("remind-me")
+		locationChanged := cmd.Flags().Changed("location")
+		if !locationChanged && (cmd.Flags().Changed("radius") || cmd.Flags().Changed("on-arrive") || cmd.Flags().Changed("on-leave")) {
+			return fmt.Errorf("--radius, --on-arrive, and --on-leave require --location")
+		}
+		if remindChanged || locationChanged {
+			timeAlarms, locationAlarms := splitAlarmsByTrigger(r.Alarms)
+			if remindChanged {
+				if updateRemindMe == "" || updateRemindMe == "none" {
+					timeAlarms = nil
+				} else {
+					alarm, err := parseAlarm(updateRemindMe)
+					if err != nil {
+						return err
+					}
+					timeAlarms = []reminder.Alarm{alarm}
+				}
+			}
+			if locationChanged {
+				if updateLocation == "" || updateLocation == "none" {
+					locationAlarms = nil
+				} else {
+					locAlarm, err := parseLocationAlarm(updateLocation, updateRadius, updateOnArrive, updateOnLeave)
+					if err != nil {
+						return err
+					}
+					locationAlarms = []reminder.Alarm{locAlarm}
+				}
+			}
+			combined := append(timeAlarms, locationAlarms...)
+			if len(combined) == 0 {
 				updates["alarms"] = nil
 			} else {
-				alarm, err := parseAlarm(updateRemindMe)
-				if err != nil {
-					return err
-				}
-				updates["alarms"] = []reminder.Alarm{alarm}
+				updates["alarms"] = combined
 			}
 		}
 		if cmd.Flags().Changed("repeat") {
@@ -151,6 +184,10 @@ func init() {
 	updateCmd.Flags().StringVar(&updateRemoveTagsBulk, "remove-tags", "", "Remove comma-separated native tags")
 	updateCmd.Flags().StringVarP(&updateList, "list", "l", "", "Move reminder to a different list")
 	updateCmd.Flags().StringVarP(&updateRemindMe, "remind-me", "r", "", "Set alarm: duration before due (15m, 1h, 2d), 'none' to clear")
+	updateCmd.Flags().StringVar(&updateLocation, "location", "", "Geofence trigger coordinates: \"lat,lng\", 'none' to clear")
+	updateCmd.Flags().Float64Var(&updateRadius, "radius", 0, "Geofence radius in meters (default: system minimum)")
+	updateCmd.Flags().BoolVar(&updateOnArrive, "on-arrive", false, "Fire the location alarm on arrival (default with --location)")
+	updateCmd.Flags().BoolVar(&updateOnLeave, "on-leave", false, "Fire the location alarm on departure")
 	updateCmd.Flags().StringVar(&updateRepeat, "repeat", "", "Set recurrence: daily, weekly, 'weekly on mon,wed,fri', 'none' to clear")
 	updateCmd.Flags().BoolVarP(&updateInteractive, "interactive", "i", false, "Update interactively")
 	updateCmd.Flags().BoolVarP(&updateForce, "force", "f", false, "Skip the shared-list move confirmation")

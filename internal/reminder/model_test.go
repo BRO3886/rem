@@ -59,3 +59,45 @@ func TestParsePriority(t *testing.T) {
 		})
 	}
 }
+
+func TestAlarmLocationString(t *testing.T) {
+	tests := []struct {
+		name string
+		loc  AlarmLocation
+		want string
+	}{
+		{
+			"arrive with title and radius",
+			AlarmLocation{Title: "Grocery Store", Latitude: 37.3318, Longitude: -122.0312, Radius: 200, Proximity: "enter"},
+			"on arriving at Grocery Store (within 200m)",
+		},
+		{
+			"leave without radius",
+			AlarmLocation{Title: "Office", Latitude: 37.7749, Longitude: -122.4194, Proximity: "leave"},
+			"on leaving Office",
+		},
+		{
+			"no title falls back to coordinates",
+			AlarmLocation{Latitude: 37.3318, Longitude: -122.0312, Proximity: "enter"},
+			"on arriving at 37.3318,-122.0312",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.loc.String(); got != tt.want {
+				t.Errorf("String() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAlarmStringPrefersLocation(t *testing.T) {
+	a := Alarm{
+		RelativeOffset: 0,
+		Location:       &AlarmLocation{Title: "Home", Proximity: "leave"},
+	}
+	if got := a.String(); got != "on leaving Home" {
+		t.Errorf("String() = %q, want location description", got)
+	}
+}

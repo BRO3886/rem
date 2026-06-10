@@ -1,5 +1,5 @@
-github.com/BRO3886/go-eventkit v0.12.0 h1:86nLRRnOkUbHjZa9qyg/yzrjZIb8eeMN9npDxawnNsE=
-github.com/BRO3886/go-eventkit v0.12.0/go.mod h1:672VezZhNB1eX7GOph9fGmR7d3rIP0/HrMv7fss4zAk=
+github.com/BRO3886/go-eventkit v0.13.0 h1:r7P8go6hA11wA67f2ViAgmDN55K23AkpAi2ho9pPgYA=
+github.com/BRO3886/go-eventkit v0.13.0/go.mod h1:672VezZhNB1eX7GOph9fGmR7d3rIP0/HrMv7fss4zAk=
 github.com/MakeNowJust/heredoc v1.0.0 h1:cXCdzVdstXyiTqTvfqk9SDHpKNjxuom+DOlyEeQ4pzQ=
 github.com/MakeNowJust/heredoc v1.0.0/go.mod h1:mG5amYoWBHf8vpLOuehzbGGw0EHxpZZ6lCpQ4fNJ8LE=
 github.com/atotto/clipboard v0.1.4 h1:EH0zSVneZPSuFR11BlR9YppQTVDbh5+16AmcJi4g1z4=

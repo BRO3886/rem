@@ -66,6 +66,7 @@ Release steps in order — do not skip or reorder:
 - `internal/skills/` handles install/uninstall logic, `internal/update/` handles background update checks
 - Background update check runs in a goroutine during `PersistentPreRun`, prints notice in `PersistentPostRun`
 - `REM_NO_UPDATE_CHECK=1` disables update checks; also skipped for dev builds, json output, non-TTY, meta commands
+- `rem skills install` shows a TTY-only confirmation (`confirmInstall()` in `cmd/rem/commands/skills.go`) and supports `--dry-run` to list files without writing. Gate is `isTTY()`, not `--agent` — `--agent claude` on a TTY still prompts; piped/CI invocations skip it
 
 ## Conventions
 - Short IDs displayed as first 8 chars of full `x-apple-reminder://UUID` ID
@@ -73,6 +74,7 @@ Release steps in order — do not skip or reorder:
 - **Multi-ID mutations**: `complete`, `uncomplete`, `flag`, `unflag`, `delete` all accept multiple IDs. Shared helper `runBatchAction` in `cmd/rem/commands/batch.go` resolves all IDs before mutating (fail-fast on a bad ID), continues past per-item errors, exits non-zero if any failed
 - All commands support `-o json|table|plain`
 - `NO_COLOR` env var respected
+- **Flag shorthand conventions (#48, breaking in v0.12)**: `-f` always means `--force` (delete, lm delete, update); `--flagged` is `-F` on add; `update --title`/`-t` (no `--name`); `update --flagged` is a bool (`--flagged=false` or `rem unflag` to clear); `-t --tags`, `-r --remind-me`, `-n --dry-run` (import), `-f --format` + `-O --output-file` (export), `-a --agent` (skills). `--yes`/`-y` aliases `--force` everywhere
 - **Interactive mode (`-i`)**: All mutation commands (add, complete, delete, flag, unflag, update, list-mgmt create/rename/delete) support `-i` for huh-based interactive forms. Shared helpers in `huh_helpers.go`. Theme: `ThemeCatppuccin()`. All handle `ErrUserAborted` gracefully.
 
 ## Website & Hosting

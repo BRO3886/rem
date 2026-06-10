@@ -22,6 +22,7 @@ var (
 	updateRemindMe    string
 	updateRepeat      string
 	updateInteractive bool
+	updateForce       bool
 )
 
 var updateCmd = &cobra.Command{
@@ -125,6 +126,10 @@ var updateCmd = &cobra.Command{
 			return fmt.Errorf("no updates specified")
 		}
 
+		if err := confirmSharedMove(r.ID, updates, updateForce); err != nil {
+			return err
+		}
+
 		err = reminderSvc.UpdateReminder(r.ID, updates)
 		if err != nil {
 			return err
@@ -148,8 +153,37 @@ func init() {
 	updateCmd.Flags().StringVar(&updateRemindMe, "remind-me", "", "Set alarm: duration before due (15m, 1h, 2d), 'none' to clear")
 	updateCmd.Flags().StringVar(&updateRepeat, "repeat", "", "Set recurrence: daily, weekly, 'weekly on mon,wed,fri', 'none' to clear")
 	updateCmd.Flags().BoolVarP(&updateInteractive, "interactive", "i", false, "Update interactively")
+	updateCmd.Flags().BoolVarP(&updateForce, "force", "y", false, "Skip the shared-list move confirmation")
+	updateCmd.Flags().BoolVar(&updateForce, "yes", false, "Skip the shared-list move confirmation (alias for --force)")
 
 	rootCmd.AddCommand(updateCmd)
+}
+
+// confirmSharedMove prompts before a move that involves a shared list, where
+// rem performs the move as copy + delete and the reminder gets a new ID.
+// errUserAborted-style cancels return an error so the update does not run.
+func confirmSharedMove(id string, updates map[string]any, force bool) error {
+	target, ok := updates["list"].(string)
+	if !ok || force {
+		return nil
+	}
+	sharedList, crosses := reminderSvc.MoveCrossesSharedList(id, target)
+	if !crosses {
+		return nil
+	}
+	if !isTTY() {
+		return fmt.Errorf("'%s' is a shared list: the move will copy the reminder and delete the original (new ID); pass --force/-y to proceed non-interactively", sharedList)
+	}
+	confirmed, err := huhConfirm(fmt.Sprintf(
+		"'%s' is a shared list — macOS cannot truly move across it, so rem will copy the reminder and delete the original (it gets a new ID). Continue?",
+		sharedList))
+	if err != nil {
+		return err
+	}
+	if !confirmed {
+		return fmt.Errorf("move cancelled")
+	}
+	return nil
 }
 
 // runUpdateInteractive runs the interactive update form.
@@ -334,6 +368,10 @@ func runUpdateInteractive(idArg string) error {
 	if len(updates) == 0 {
 		fmt.Println("No changes made.")
 		return nil
+	}
+
+	if err := confirmSharedMove(r.ID, updates, false); err != nil {
+		return err
 	}
 
 	if err := reminderSvc.UpdateReminder(r.ID, updates); err != nil {

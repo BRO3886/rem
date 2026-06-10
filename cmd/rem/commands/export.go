@@ -20,7 +20,7 @@ var exportCmd = &cobra.Command{
 	Use:   "export",
 	Short: "Export reminders to JSON or CSV",
 	Example: `  rem export --list Work --format json > work.json
-  rem export --format csv --output reminders.csv
+  rem export --format csv --output-file reminders.csv
   rem export --incomplete --format json`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		filter := &reminder.ListFilter{
@@ -59,8 +59,8 @@ var exportCmd = &cobra.Command{
 
 func init() {
 	exportCmd.Flags().StringVarP(&exportList, "list", "l", "", "Export reminders from a specific list")
-	exportCmd.Flags().StringVar(&exportFormat, "format", "json", "Export format: json, csv")
-	exportCmd.Flags().StringVar(&exportOutputFile, "output-file", "", "Output file path (default: stdout)")
+	exportCmd.Flags().StringVarP(&exportFormat, "format", "f", "json", "Export format: json, csv")
+	exportCmd.Flags().StringVarP(&exportOutputFile, "output-file", "O", "", "Output file path (default: stdout)")
 	exportCmd.Flags().BoolVar(&exportIncomplete, "incomplete", false, "Export only incomplete reminders")
 	rootCmd.AddCommand(exportCmd)
 }

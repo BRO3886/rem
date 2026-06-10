@@ -10,19 +10,19 @@ import (
 )
 
 var (
-	updateName        string
-	updateNotes       string
-	updateDue         string
-	updatePriority    string
-	updateURL         string
-	updateFlagged     string
-	updateAddTagsBulk string
-	updateRemoveTagsBulk  string
-	updateList        string
-	updateRemindMe    string
-	updateRepeat      string
-	updateInteractive bool
-	updateForce       bool
+	updateTitle          string
+	updateNotes          string
+	updateDue            string
+	updatePriority       string
+	updateURL            string
+	updateFlagged        bool
+	updateAddTagsBulk    string
+	updateRemoveTagsBulk string
+	updateList           string
+	updateRemindMe       string
+	updateRepeat         string
+	updateInteractive    bool
+	updateForce          bool
 )
 
 var updateCmd = &cobra.Command{
@@ -32,7 +32,7 @@ var updateCmd = &cobra.Command{
 	Long:    `Update properties of an existing reminder by its ID.`,
 	Example: `  rem update abc12345 --due "next monday"
   rem update abc12345 --notes "Updated notes" --priority medium
-  rem edit abc12345 --name "New title"
+  rem edit abc12345 --title "New title"
   rem update abc12345 --list "Work"
   rem update abc12345 --remind-me 15m
   rem update abc12345 --repeat "weekly on mon,fri"
@@ -63,8 +63,8 @@ var updateCmd = &cobra.Command{
 
 		updates := make(map[string]any)
 
-		if cmd.Flags().Changed("name") {
-			updates["name"] = updateName
+		if cmd.Flags().Changed("title") {
+			updates["name"] = updateTitle
 		}
 		if cmd.Flags().Changed("notes") {
 			updates["body"] = updateNotes
@@ -87,11 +87,11 @@ var updateCmd = &cobra.Command{
 			updates["priority"] = reminder.ParsePriority(updatePriority)
 		}
 		if cmd.Flags().Changed("flagged") {
-			updates["flagged"] = updateFlagged == "true" || updateFlagged == "yes"
+			updates["flagged"] = updateFlagged
 		}
 		titleTags := []string(nil)
-		if cmd.Flags().Changed("name") {
-			titleTags = tagsFromTitle(updateName)
+		if cmd.Flags().Changed("title") {
+			titleTags = tagsFromTitle(updateTitle)
 		}
 		if len(titleTags) > 0 || updateAddTagsBulk != "" || updateRemoveTagsBulk != "" {
 			updates["tags"] = mergeTagUpdates(r.Tags, titleTags, updateAddTagsBulk, updateRemoveTagsBulk)
@@ -141,20 +141,20 @@ var updateCmd = &cobra.Command{
 }
 
 func init() {
-	updateCmd.Flags().StringVar(&updateName, "name", "", "New name/title")
+	updateCmd.Flags().StringVarP(&updateTitle, "title", "t", "", "New title")
 	updateCmd.Flags().StringVarP(&updateNotes, "notes", "n", "", "New notes/body")
 	updateCmd.Flags().StringVarP(&updateDue, "due", "d", "", "New due date (use 'none' to clear)")
 	updateCmd.Flags().StringVarP(&updatePriority, "priority", "p", "", "New priority: high, medium, low, none")
 	updateCmd.Flags().StringVarP(&updateURL, "url", "u", "", "New URL")
-	updateCmd.Flags().StringVar(&updateFlagged, "flagged", "", "Set flagged status: true/false")
+	updateCmd.Flags().BoolVar(&updateFlagged, "flagged", false, "Set flagged state (use rem unflag to clear)")
 	updateCmd.Flags().StringVar(&updateAddTagsBulk, "add-tags", "", "Add comma-separated native tags")
 	updateCmd.Flags().StringVar(&updateRemoveTagsBulk, "remove-tags", "", "Remove comma-separated native tags")
 	updateCmd.Flags().StringVarP(&updateList, "list", "l", "", "Move reminder to a different list")
-	updateCmd.Flags().StringVar(&updateRemindMe, "remind-me", "", "Set alarm: duration before due (15m, 1h, 2d), 'none' to clear")
+	updateCmd.Flags().StringVarP(&updateRemindMe, "remind-me", "r", "", "Set alarm: duration before due (15m, 1h, 2d), 'none' to clear")
 	updateCmd.Flags().StringVar(&updateRepeat, "repeat", "", "Set recurrence: daily, weekly, 'weekly on mon,wed,fri', 'none' to clear")
 	updateCmd.Flags().BoolVarP(&updateInteractive, "interactive", "i", false, "Update interactively")
-	updateCmd.Flags().BoolVarP(&updateForce, "force", "y", false, "Skip the shared-list move confirmation")
-	updateCmd.Flags().BoolVar(&updateForce, "yes", false, "Skip the shared-list move confirmation (alias for --force)")
+	updateCmd.Flags().BoolVarP(&updateForce, "force", "f", false, "Skip the shared-list move confirmation")
+	updateCmd.Flags().BoolVarP(&updateForce, "yes", "y", false, "Skip the shared-list move confirmation (alias for --force)")
 
 	rootCmd.AddCommand(updateCmd)
 }
@@ -172,7 +172,7 @@ func confirmSharedMove(id string, updates map[string]any, force bool) error {
 		return nil
 	}
 	if !isTTY() {
-		return fmt.Errorf("'%s' is a shared list: the move will copy the reminder and delete the original (new ID); pass --force/-y to proceed non-interactively", sharedList)
+		return fmt.Errorf("'%s' is a shared list: the move will copy the reminder and delete the original (new ID); pass --force/-f to proceed non-interactively", sharedList)
 	}
 	confirmed, err := huhConfirm(fmt.Sprintf(
 		"'%s' is a shared list — macOS cannot truly move across it, so rem will copy the reminder and delete the original (it gets a new ID). Continue?",
@@ -337,9 +337,9 @@ func runUpdateInteractive(idArg string) error {
 	if tagsStr != strings.Join(r.Tags, ", ") {
 		updates["tags"] = mergeTags(nil, append(tagsFromTitle(name), parseTagList(tagsStr)...), nil)
 	} else if name != r.Name {
-		titleTags := tagsFromTitle(name)
-		if len(titleTags) > 0 {
-			updates["tags"] = mergeTags(r.Tags, titleTags, nil)
+		titleTagsFromName := tagsFromTitle(name)
+		if len(titleTagsFromName) > 0 {
+			updates["tags"] = mergeTags(r.Tags, titleTagsFromName, nil)
 		}
 	}
 

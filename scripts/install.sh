@@ -5,10 +5,11 @@ set -euo pipefail
 # Usage: curl -fsSL https://rem.sidv.dev/install | bash
 
 REPO="BRO3886/rem"
-INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
+INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
 BINARY_NAME="rem"
 
 info() { printf "\033[36m%s\033[0m\n" "$*"; }
+warn() { printf "\033[33m%s\033[0m\n" "$*"; }
 error() { printf "\033[31mError: %s\033[0m\n" "$*" >&2; exit 1; }
 
 # --- Pre-flight checks ---
@@ -60,6 +61,10 @@ tar -xzf "${TMPDIR_PATH}/${ASSET_NAME}" -C "${TMPDIR_PATH}"
 
 # --- Install ---
 
+if [ ! -d "$INSTALL_DIR" ]; then
+    mkdir -p "$INSTALL_DIR" 2>/dev/null || sudo mkdir -p "$INSTALL_DIR"
+fi
+
 if [ -w "$INSTALL_DIR" ]; then
     mv "${TMPDIR_PATH}/${BINARY_NAME}" "${INSTALL_DIR}/${BINARY_NAME}"
 else
@@ -69,20 +74,41 @@ fi
 
 info "Installed rem ${LATEST} to ${INSTALL_DIR}/${BINARY_NAME}"
 
-# --- Verify ---
+# --- Old install cleanup notice ---
 
-if command -v rem >/dev/null 2>&1; then
-    info "Run 'rem --help' to get started"
-else
-    info "Note: ${INSTALL_DIR} may not be in your PATH"
+if [ "$INSTALL_DIR" != "/usr/local/bin" ] && [ -e "/usr/local/bin/${BINARY_NAME}" ]; then
+    warn "An older rem exists at /usr/local/bin/${BINARY_NAME}."
+    warn "Remove it to avoid PATH confusion: sudo rm /usr/local/bin/${BINARY_NAME}"
 fi
+
+# --- PATH check ---
+
+case ":$PATH:" in
+    *":${INSTALL_DIR}:"*)
+        info "Run 'rem --help' to get started"
+        ;;
+    *)
+        warn "${INSTALL_DIR} is not in your PATH."
+        case "${SHELL:-}" in
+            */zsh)
+                warn "Add it with: echo 'export PATH=\"${INSTALL_DIR}:\$PATH\"' >> ~/.zshrc && source ~/.zshrc"
+                ;;
+            */fish)
+                warn "Add it with: fish_add_path ${INSTALL_DIR}"
+                ;;
+            *)
+                warn "Add it with: echo 'export PATH=\"${INSTALL_DIR}:\$PATH\"' >> ~/.bashrc && source ~/.bashrc"
+                ;;
+        esac
+        ;;
+esac
 
 # --- Agent skill installation ---
 
 echo ""
 info "rem can install an AI agent skill that teaches Claude Code / Codex / OpenClaw how to use it."
 printf "Install agent skill now? [Y/n] "
-read -r answer < /dev/tty 2>/dev/null || answer="n"
+{ read -r answer < /dev/tty; } 2>/dev/null || answer="n"
 if [ "$answer" != "n" ] && [ "$answer" != "N" ]; then
     "${INSTALL_DIR}/${BINARY_NAME}" skills install || true
 fi

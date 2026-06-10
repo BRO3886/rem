@@ -59,7 +59,7 @@ Do NOT use rem for:
 | "find reminders about X" | `rem search "X"` |
 | "flag / unflag X" | `rem flag <short-id>...` or `rem unflag <short-id>...` (supports multiple IDs) |
 | "show me flagged stuff" | `rem list --flagged` |
-| "move X to list Y" | `rem update <short-id> --list "Y"` (shared lists: prompts, pass `-y`; new ID — see gotchas) |
+| "move X to list Y" | `rem update <short-id> --list "Y"` (if Y or source is shared: confirm with user first, then `-y` — see gotchas) |
 | "change priority to high" | `rem update <short-id> --priority high` |
 | "add notes to X" | `rem update <short-id> --notes "..."` |
 | "tag this as work" / "add tags" | `rem add "Task #work"` or `rem update <short-id> --add-tags "work,urgent"` |
@@ -126,7 +126,11 @@ rem update AB12 --url ""    # clear
 6. **`rem delete` prompts by default.** Pass `--force` / `--yes` / `-y` when scripting to skip the confirmation.
 7. **`rem add -i` (interactive form) has no `--silent` equivalent.** If a user wants a silent reminder via the interactive flow, create it then clear the alarm in the same Bash call: `id=$(rem add "Task" --due tomorrow -o json | jq -r '.id'); rem update "$id" --remind-me none`.
 8. **Old reminders with URLs in the notes body** (`URL: https://...`) still read correctly as a backward-compat fallback. New reminders always use the native URL field.
-9. **Moving to/from a shared list changes the reminder's ID — and prompts.** macOS has no true move across a shared-list boundary, so rem copies the reminder (all fields preserved, including completed state) and deletes the original. `rem update --list` asks for confirmation first; **always pass `--force`/`-y` when scripting** or the command errors out non-interactively (same convention as `rem delete`). The warning on stderr carries the new ID — **re-resolve the ID after such a move**, the old short ID is gone. Plain (non-shared) moves keep the ID and never prompt. Shared lists are marked in `rem lists` output (`[shared]` in plain, `(shared)` in table) and carry `IsShared`/`SharedToMe`/`IsOwnedByMe` in JSON.
+9. **Moving to/from a shared list changes the reminder's ID — and rem prompts before doing it.** macOS has no true move across a shared-list boundary, so rem copies the reminder (all fields preserved, including completed state) and deletes the original. Without `-y`, `rem update --list` blocks on a confirmation you cannot answer (TTY prompt; non-TTY it errors). Procedure for a move involving a shared list:
+   1. Detect: `rem lists -o json | jq -r '.[] | select(.IsShared) | .Name'` — if neither source nor target list is in that output, move normally, no flag needed.
+   2. If one is shared: tell the user the reminder will be recreated with a new ID and confirm with them — do NOT silently pass `-y`; the prompt exists to protect their data on a list other people see.
+   3. Run with the flag once confirmed: `rem update <id> --list "Shared List" -y`.
+   4. Re-resolve the ID: the old short ID is dead. Find the new one with `rem list --list "Shared List" -o json` (the stderr warning also prints it).
 
 ## Reference files (load when needed)
 

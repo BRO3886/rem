@@ -14,7 +14,7 @@ A blazing fast CLI for macOS Reminders. Sub-200ms reads AND writes via EventKit,
 - **Native tags** — `#hashtag` in titles or `--tags` flag, stored as real Reminders.app tags
 - **Location reminders** — geofence triggers via `--location "lat,lng"`, fire on arrival or departure
 - **Shared list support** — full CRUD on shared lists, sharing state in `rem lists`, and moves across the shared-list boundary via copy (macOS has no true move there)
-- **Import/Export** — JSON and CSV with full property round-trip (including tags)
+- **Import/Export** — JSON and CSV with full property round-trip (including tags and location triggers)
 - **Powered by [go-eventkit](https://github.com/BRO3886/go-eventkit)** — use the same library directly for programmatic Go access
 - **Shell completions** — bash, zsh, fish
 

@@ -38,6 +38,8 @@ rem add "Review PR" --due "friday at 2pm" --remind-me 30m   # notify 30 min befo
 rem add "Checklist item" --due tomorrow --silent            # due date, no notification
 rem add "Ship demo" --url https://github.com/BRO3886/rem/pull/24
 rem add "Review PR #work #urgent" --tags "deploy"          # native tags
+rem add "Buy milk" --location "37.3318,-122.0312" --radius 200   # geofence: on arrival
+rem add "Take out trash" --location "37.3318,-122.0312" --on-leave
 ```
 
 **Aliases:** `create`, `new`
@@ -47,6 +49,8 @@ rem add "Review PR #work #urgent" --tags "deploy"          # native tags
 **URLs.** `--url` writes to the real Reminders.app URL field (not the notes body), so URLs show up with Apple's native link card rendering in the Reminders.app UI.
 
 **Tags.** `#hashtags` in the title are automatically parsed and stored as native Reminders.app tags. You can also pass tags via the `--tags` flag. Tags use the private ReminderKit API — if Apple changes it in a future macOS version, the reminder is still created successfully (tags just won't be set).
+
+**Location triggers.** `--location "lat,lng"` attaches a geofence alarm via public EventKit. It fires on arrival by default; pass `--on-leave` for departure and `--radius` (meters) to size the fence (0 = system minimum). Coordinates only — rem does no address geocoding. A reminder can carry both a due date and a location trigger. The geofence only fires on a device with Location Services enabled for Reminders (typically your iPhone).
 
 | Flag | Description |
 |------|-------------|
@@ -59,6 +63,10 @@ rem add "Review PR #work #urgent" --tags "deploy"          # native tags
 | `-t, --tags` | Comma-separated native tags (e.g. `work,urgent`) |
 | `-r, --remind-me` | Custom alarm: duration before due (`15m`, `1h`, `2d`) or absolute time |
 | `--silent` | Don't auto-attach an alarm when `--due` is set |
+| `--location` | Geofence trigger: `"lat,lng"` (e.g. `"37.3318,-122.0312"`) |
+| `--radius` | Geofence radius in meters (default: system minimum) |
+| `--on-arrive` | Fire location alarm on arrival (default with `--location`) |
+| `--on-leave` | Fire location alarm on departure |
 | `--repeat` | Set recurrence: `daily`, `weekly`, `monthly`, `yearly`, or `weekly on mon,wed,fri` |
 | `-i, --interactive` | Step-by-step interactive creation |
 
@@ -106,6 +114,8 @@ rem update 6ECE --url https://github.com/org/repo/pull/42
 rem update 6ECE --url ""   # clear URL
 rem update 6ECE --add-tags "work,urgent"    # add tags
 rem update 6ECE --remove-tags "urgent"      # remove tags
+rem update 6ECE --location "37.3318,-122.0312" --on-leave   # set/replace geofence
+rem update 6ECE --location none                             # clear geofence only
 ```
 
 **Aliases:** `edit`
@@ -113,6 +123,8 @@ rem update 6ECE --remove-tags "urgent"      # remove tags
 `--url` writes to the native Reminders.app URL field (not the notes body). Pass an empty string (`--url ""`) to clear.
 
 `--add-tags` and `--remove-tags` accept comma-separated tag names. Tags in `--title` are also parsed as hashtags. Tags use the private ReminderKit API and degrade gracefully if unavailable.
+
+`--remind-me` and `--location` manage separate alarm buckets: `--remind-me` replaces only time-based alarms, `--location` replaces only the geofence. `--remind-me none` clears time alarms but keeps the geofence; `--location none` does the reverse.
 
 `--list` moves the reminder. Plain moves are native and keep the reminder's ID. Moving to or from a **shared list** is different: macOS has no true move across that boundary (Apple's own apps copy and delete behind the scenes), so rem copies the reminder — all fields preserved, including completed state — deletes the original, and prints a warning with the **new ID** on stderr. Because the ID changes, rem **asks for confirmation** before a shared-list move; pass `--force`/`-f` to skip the prompt (required in scripts — non-interactive runs refuse without it, same as `rem delete`). Re-resolve the ID after such a move.
 
@@ -128,6 +140,10 @@ rem update 6ECE --remove-tags "urgent"      # remove tags
 | `--add-tags` | Add comma-separated native tags |
 | `--remove-tags` | Remove comma-separated native tags |
 | `-r, --remind-me` | Set alarm: duration (`15m`, `1h`, `2d`), `none` to clear |
+| `--location` | Geofence trigger: `"lat,lng"`, `none` to clear |
+| `--radius` | Geofence radius in meters (default: system minimum) |
+| `--on-arrive` | Fire location alarm on arrival (default with `--location`) |
+| `--on-leave` | Fire location alarm on departure |
 | `--repeat` | Set recurrence: `daily`, `weekly`, `monthly`, `yearly`, `none` to clear |
 | `-f, --force` / `-y, --yes` | Skip the shared-list move confirmation |
 | `-i, --interactive` | Interactive update |

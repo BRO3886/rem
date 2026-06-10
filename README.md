@@ -12,6 +12,7 @@ A blazing fast CLI for macOS Reminders. Sub-200ms reads AND writes via EventKit,
 - **20 commands** — full CRUD, search, stats, overdue, upcoming, interactive mode
 - **Multiple output formats** — table, JSON, plain text
 - **Native tags** — `#hashtag` in titles or `--tags` flag, stored as real Reminders.app tags
+- **Location reminders** — geofence triggers via `--location "lat,lng"`, fire on arrival or departure
 - **Shared list support** — full CRUD on shared lists, sharing state in `rem lists`, and moves across the shared-list boundary via copy (macOS has no true move there)
 - **Import/Export** — JSON and CSV with full property round-trip (including tags)
 - **Powered by [go-eventkit](https://github.com/BRO3886/go-eventkit)** — use the same library directly for programmatic Go access
@@ -85,6 +86,10 @@ rem add "Buy groceries" --list Personal --due tomorrow --priority high --remind-
 # Create with tags (parsed from title + --tags flag)
 rem add "Review PR #work #urgent" --tags "deploy"
 
+# Location reminder: fires when arriving (default) or leaving
+rem add "Buy milk" --location "37.3318,-122.0312" --radius 200
+rem add "Take out trash" --location "37.3318,-122.0312" --on-leave
+
 # List incomplete reminders
 rem list --list Work --incomplete
 
@@ -107,7 +112,7 @@ rem stats
 
 ```bash
 # Create
-rem add "Title" [--list LIST] [--due DATE] [--priority high|medium|low] [--notes TEXT] [--url URL] [-F/--flagged] [-t/--tags TAGS] [-r/--remind-me DURATION] [--repeat PATTERN]
+rem add "Title" [--list LIST] [--due DATE] [--priority high|medium|low] [--notes TEXT] [--url URL] [-F/--flagged] [-t/--tags TAGS] [-r/--remind-me DURATION] [--repeat PATTERN] [--location "LAT,LNG"] [--radius METERS] [--on-arrive|--on-leave]
 rem add -i                          # Interactive creation
 
 # List
@@ -119,7 +124,7 @@ rem show <id>                       # Full or partial ID
 rem get <id> -o json
 
 # Update
-rem update <id> [-t/--title TEXT] [--due DATE] [--priority LEVEL] [--notes TEXT] [--url URL] [--add-tags TAGS] [--remove-tags TAGS] [-r/--remind-me DURATION] [--repeat PATTERN] [--list LIST]
+rem update <id> [-t/--title TEXT] [--due DATE] [--priority LEVEL] [--notes TEXT] [--url URL] [--add-tags TAGS] [--remove-tags TAGS] [-r/--remind-me DURATION] [--repeat PATTERN] [--list LIST] [--location "LAT,LNG"|none] [--radius METERS] [--on-arrive|--on-leave]
 
 # Complete / Uncomplete (support multiple IDs)
 rem complete <id> [id2 id3...]

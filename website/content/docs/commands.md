@@ -114,6 +114,8 @@ rem update 6ECE --remove-tags "urgent"      # remove tags
 
 `--add-tags` and `--remove-tags` accept comma-separated tag names. Tags in `--name` are also parsed as hashtags. Tags use the private ReminderKit API and degrade gracefully if unavailable.
 
+`--list` moves the reminder. Plain moves are native and keep the reminder's ID. Moving to or from a **shared list** is different: macOS has no true move across that boundary (Apple's own apps copy and delete behind the scenes), so rem copies the reminder — all fields preserved, including completed state — deletes the original, and prints a warning with the **new ID** on stderr. Re-resolve the ID after such a move.
+
 | Flag | Description |
 |------|-------------|
 | `--name` | New title |
@@ -253,6 +255,8 @@ rem lists --count    # include reminder count per list
 | Flag | Description |
 |------|-------------|
 | `-c, --count` | Show reminder count per list |
+
+Shared lists are marked — `(shared)` in table output, `[shared]` in plain. JSON output carries three booleans per list: `IsShared`, `SharedToMe` (someone shared it with you), and `IsOwnedByMe`.
 
 ### `rem list-mgmt`
 

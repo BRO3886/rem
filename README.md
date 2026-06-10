@@ -12,6 +12,7 @@ A blazing fast CLI for macOS Reminders. Sub-200ms reads AND writes via EventKit,
 - **20 commands** — full CRUD, search, stats, overdue, upcoming, interactive mode
 - **Multiple output formats** — table, JSON, plain text
 - **Native tags** — `#hashtag` in titles or `--tags` flag, stored as real Reminders.app tags
+- **Shared list support** — full CRUD on shared lists, sharing state in `rem lists`, and moves across the shared-list boundary via copy (macOS has no true move there)
 - **Import/Export** — JSON and CSV with full property round-trip (including tags)
 - **Powered by [go-eventkit](https://github.com/BRO3886/go-eventkit)** — use the same library directly for programmatic Go access
 - **Shell completions** — bash, zsh, fish
@@ -334,7 +335,9 @@ rem/
 
 **All reads and writes** — including reminder CRUD and list CRUD — go through `go-eventkit` (`github.com/BRO3886/go-eventkit`) — an Objective-C EventKit bridge compiled into the binary via cgo. Direct in-process access to the Reminders store, no IPC. All operations complete in under 200ms.
 
-**Flagged and tag operations** use the private ReminderKit bridge in go-eventkit — EventKit doesn't expose these properties, but `REMReminder.flagged` and `REMReminder.hashtags` do. Tags degrade gracefully if the private API becomes unavailable. AppleScript is only used for the default list name query.
+**Flagged, tag, and list-sharing operations** use the private ReminderKit bridge in go-eventkit — EventKit doesn't expose these properties, but `REMReminder.flagged`, `REMReminder.hashtags`, and `REMList.isShared` do. Tags degrade gracefully if the private API becomes unavailable. AppleScript is only used for the default list name query.
+
+**Shared lists** work like any other list for creates, reads, updates, flags, tags, and deletes. Moving a reminder across a shared-list boundary is the one exception: macOS refuses a true move there (even Apple's own apps copy and delete behind the scenes), so rem does the same — the reminder is copied to the target with all fields intact, the original is deleted, and a warning with the new ID is printed to stderr.
 
 ## Performance
 
@@ -354,7 +357,8 @@ See [Performance docs](https://rem.sidv.dev/docs/performance/) for the full opti
 
 - **macOS only** — requires EventKit framework and osascript
 - **No subtasks** — not exposed via EventKit
-- **Tags and flagged use private API** — reads/writes go through Apple's private ReminderKit framework since EventKit doesn't expose these properties. If Apple changes the private API in a future macOS version, tags degrade gracefully (reminder is created/updated without tags, a warning is printed) while flagged currently degrades silently. See [#44](https://github.com/BRO3886/rem/issues/44) for tracking consistency
+- **Tags, flagged, and list-sharing state use private API** — reads/writes go through Apple's private ReminderKit framework since EventKit doesn't expose these properties. If Apple changes the private API in a future macOS version, tags and flagged degrade gracefully (the reminder is still created/updated, a warning is printed — see [#44](https://github.com/BRO3886/rem/issues/44)) and lists simply report as unshared
+- **No true move across shared-list boundaries** — macOS refuses it at the account level, so rem moves to/from shared lists by copy + delete; the reminder gets a new ID (warned on stderr). See [#50](https://github.com/BRO3886/rem/issues/50)
 - **Immutable lists** cannot be renamed or deleted (system lists like Siri suggestions)
 
 ## License

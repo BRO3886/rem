@@ -102,8 +102,15 @@ EventKit's `EKReminder` does not expose flagged state, the real URL field, or ha
 - **Flagged** — read via KVC (`valueForKey:@"flagged"` on `REMReminder`), write via `REMSaveRequest` → `flaggedContext.setFlagged:`
 - **URL attachments** — write via `REMSaveRequest` → `attachmentContext.setURLAttachmentWithURL:`
 - **Tags** — read via KVC (`valueForKey:@"hashtags"` on `REMReminder`), write via `REMSaveRequest` → `hashtagContext.addHashtagWithType:name:`
+- **List sharing state** — read via KVC on `REMList` (`isShared`, `sharedToMe`, `isOwnedByMe`); EventKit exposes no sharing information for reminder lists
 
-All private API calls are guarded by `respondsToSelector:` checks and complete in under 200ms. Tags degrade gracefully — if the private API becomes unavailable, the reminder is created/updated without tags and a warning is printed. Flagged and URL operations also degrade cleanly.
+All private API calls are guarded by `respondsToSelector:` checks and complete in under 200ms. Tags degrade gracefully — if the private API becomes unavailable, the reminder is created/updated without tags and a warning is printed. Flagged and URL operations also degrade cleanly, and lists simply report as unshared.
+
+## Shared lists and moves
+
+Shared lists behave like any other list for creates, reads, updates, flags, tags, and deletes. Moves are the exception. ReminderKit refuses to move a reminder across a shared-list boundary at the account-capability level (`com.apple.reminderkit error -3002`), regardless of whether you own the share — and Apple's own move paths (Reminders.app, AppleScript's `move`) quietly copy and delete behind the scenes, producing a new reminder ID.
+
+rem does the same, but says so. When a move involves a shared list (detected via the sharing booleans above), rem copies the reminder to the target with every field intact — notes, dates, priority, URL, flagged, tags, alarms, recurrence, completed state — deletes the original, and prints a warning with the new ID to stderr. Plain moves between unshared lists stay native and keep the reminder's ID.
 
 ## AppleScript fallback
 
@@ -144,7 +151,7 @@ rem uses five external Go dependencies:
 
 | Package | Purpose |
 |---------|---------|
-| `BRO3886/go-eventkit` v0.9.0+ | Native EventKit bindings (cgo + ObjC, reads AND writes). Includes the private ReminderKit bridge for flagged state, URL attachments, and hashtags. |
+| `BRO3886/go-eventkit` v0.12.0+ | Native EventKit bindings (cgo + ObjC, reads AND writes). Includes the private ReminderKit bridge for flagged state, URL attachments, hashtags, and list sharing state. |
 | `spf13/cobra` | CLI framework (commands, flags, help) |
 | `olekukonko/tablewriter` | Terminal table formatting |
 | `fatih/color` | Terminal colors |

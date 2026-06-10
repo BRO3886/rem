@@ -65,6 +65,7 @@ Do NOT use rem for:
 | "tag this as work" / "add tags" | `rem add "Task #work"` or `rem update <short-id> --add-tags "work,urgent"` |
 | "remove the urgent tag" | `rem update <short-id> --remove-tags "urgent"` |
 | "make it repeat weekly / monthly" | `rem add ... --repeat weekly` or `--repeat "weekly on mon,wed,fri"` |
+| "remind me when I get to / leave X" | `rem add "..." --location "lat,lng"` (+ `--on-leave` for departure) — see location section |
 | "clear the due date on X" | `rem update <short-id> --due none` |
 | "what lists do I have" | `rem lists` (add `--count` for per-list totals) |
 | "how many reminders total / stats" | `rem stats` |
@@ -106,6 +107,21 @@ When `--due` is set on `rem add`, rem auto-attaches an alarm at the due time. Th
 
 Full detail: [references/commands.md](references/commands.md) `rem add` section.
 
+## Location reminders take coordinates, not addresses
+
+`--location "lat,lng"` attaches a geofence trigger that fires on **arrival by default**; add `--on-leave` for departure, `--radius <meters>` to widen the fence (0 = system minimum). rem does NO geocoding — you must supply decimal coordinates:
+
+- Well-known places (landmarks, chains' flagship stores, cities): use coordinates you know.
+- Personal places ("the office", "mom's house", "my gym"): **ask the user** for the address or coordinates — never guess.
+
+```bash
+rem add "Buy milk" --location "37.3318,-122.0312" --radius 200          # on arrival
+rem update AB12 --location "37.7749,-122.4194" --on-leave               # on departure
+rem update AB12 --location none                                         # remove geofence only
+```
+
+A reminder can have both a due date and a location. `--remind-me` and `--location` manage separate alarm buckets — clearing one never touches the other.
+
 ## URLs go in the native Reminders.app URL field
 
 When the user wants a link attached to a reminder, pass it via `--url`. rem writes to the real Reminders.app URL field (not the notes body), so the link shows in the Reminders.app UI with Apple's native link card rendering. Clear a URL with `--url ""`.
@@ -125,8 +141,9 @@ rem update AB12 --url ""    # clear
 5. **Tags from title are additive.** `#hashtags` in the title are parsed and stored as native Reminders.app tags. They stay in the title text AND become tag objects. Pure numbers like `#42` are ignored (treated as issue references, not tags).
 6. **`rem delete` prompts by default.** Pass `--force` / `--yes` / `-f` / `-y` when scripting to skip the confirmation.
 7. **`rem add -i` (interactive form) has no `--silent` equivalent.** If a user wants a silent reminder via the interactive flow, create it then clear the alarm in the same Bash call: `id=$(rem add "Task" --due tomorrow -o json | jq -r '.id'); rem update "$id" --remind-me none`.
-8. **Old reminders with URLs in the notes body** (`URL: https://...`) still read correctly as a backward-compat fallback. New reminders always use the native URL field.
-9. **Moving to/from a shared list changes the reminder's ID — and rem prompts before doing it.** macOS has no true move across a shared-list boundary, so rem copies the reminder (all fields preserved, including completed state) and deletes the original. Without `-y`, `rem update --list` blocks on a confirmation you cannot answer (TTY prompt; non-TTY it errors). Procedure for a move involving a shared list:
+8. **Location alarms save even without Location Services, but never fire.** rem writes the geofence via public EventKit regardless; the notification only fires if Location Services is enabled for Reminders on the device watching the fence (usually the user's iPhone). If a user reports a location reminder "not working", that's the first thing to check — not rem.
+9. **Old reminders with URLs in the notes body** (`URL: https://...`) still read correctly as a backward-compat fallback. New reminders always use the native URL field.
+10. **Moving to/from a shared list changes the reminder's ID — and rem prompts before doing it.** macOS has no true move across a shared-list boundary, so rem copies the reminder (all fields preserved, including completed state) and deletes the original. Without `-y`, `rem update --list` blocks on a confirmation you cannot answer (TTY prompt; non-TTY it errors). Procedure for a move involving a shared list:
    1. Detect: `rem lists -o json | jq -r '.[] | select(.IsShared) | .Name'` — if neither source nor target list is in that output, move normally, no flag needed.
    2. If one is shared: tell the user the reminder will be recreated with a new ID and confirm with them — do NOT silently pass `-y`; the prompt exists to protect their data on a list other people see.
    3. Run with the flag once confirmed: `rem update <id> --list "Shared List" -f`.

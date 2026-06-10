@@ -11,9 +11,19 @@ import (
 
 // JSONAlarm is the JSON-serializable representation of an alarm.
 type JSONAlarm struct {
-	AbsoluteDate   *string `json:"absolute_date,omitempty"`
-	RelativeOffset string  `json:"relative_offset,omitempty"` // e.g., "-15m0s"
-	Description    string  `json:"description"`               // human-readable
+	AbsoluteDate   *string       `json:"absolute_date,omitempty"`
+	RelativeOffset string        `json:"relative_offset,omitempty"` // e.g., "-15m0s"
+	Location       *JSONLocation `json:"location,omitempty"`
+	Description    string        `json:"description"` // human-readable
+}
+
+// JSONLocation is the JSON-serializable representation of a geofence trigger.
+type JSONLocation struct {
+	Title     string  `json:"title,omitempty"`
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+	Radius    float64 `json:"radius,omitempty"`    // meters; 0 = system default
+	Proximity string  `json:"proximity,omitempty"` // "enter" or "leave"
 }
 
 // JSONRecurrenceRule is the JSON-serializable representation of a recurrence rule.
@@ -106,9 +116,18 @@ func ToJSON(r *reminder.Reminder) JSONReminder {
 		ja := JSONAlarm{
 			Description: a.String(),
 		}
-		if a.AbsoluteDate != nil {
+		switch {
+		case a.Location != nil:
+			ja.Location = &JSONLocation{
+				Title:     a.Location.Title,
+				Latitude:  a.Location.Latitude,
+				Longitude: a.Location.Longitude,
+				Radius:    a.Location.Radius,
+				Proximity: a.Location.Proximity,
+			}
+		case a.AbsoluteDate != nil:
 			ja.AbsoluteDate = formatTimePtr(a.AbsoluteDate)
-		} else {
+		default:
 			ja.RelativeOffset = a.RelativeOffset.String()
 		}
 		jr.Alarms = append(jr.Alarms, ja)
@@ -165,7 +184,15 @@ func ImportJSON(r io.Reader) ([]*reminder.Reminder, error) {
 
 		for _, ja := range jr.Alarms {
 			a := reminder.Alarm{}
-			if ja.AbsoluteDate != nil {
+			if ja.Location != nil {
+				a.Location = &reminder.AlarmLocation{
+					Title:     ja.Location.Title,
+					Latitude:  ja.Location.Latitude,
+					Longitude: ja.Location.Longitude,
+					Radius:    ja.Location.Radius,
+					Proximity: ja.Location.Proximity,
+				}
+			} else if ja.AbsoluteDate != nil {
 				t, err := time.ParseInLocation(timeFormat, *ja.AbsoluteDate, time.Now().Location())
 				if err == nil {
 					a.AbsoluteDate = &t

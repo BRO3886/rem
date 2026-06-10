@@ -277,3 +277,70 @@ func TestSpecialCharacters(t *testing.T) {
 		t.Errorf("CSV name with special chars: expected %q, got %q", reminders[0].Name, csvImported[0].Name)
 	}
 }
+
+func TestJSONLocationAlarmRoundtrip(t *testing.T) {
+	original := []*reminder.Reminder{
+		{
+			Name:     "Buy milk",
+			ListName: "Errands",
+			Alarms: []reminder.Alarm{
+				{Location: &reminder.AlarmLocation{
+					Title:     "Grocery Store",
+					Latitude:  37.3318,
+					Longitude: -122.0312,
+					Radius:    200,
+					Proximity: "enter",
+				}},
+				{Location: &reminder.AlarmLocation{
+					Title:     "Office",
+					Latitude:  37.7749,
+					Longitude: -122.4194,
+					Proximity: "leave",
+				}},
+			},
+		},
+	}
+
+	var buf bytes.Buffer
+	if err := ExportJSON(&buf, original); err != nil {
+		t.Fatalf("export failed: %v", err)
+	}
+
+	imported, err := ImportJSON(&buf)
+	if err != nil {
+		t.Fatalf("import failed: %v", err)
+	}
+	if len(imported) != 1 {
+		t.Fatalf("imported %d reminders, want 1", len(imported))
+	}
+
+	alarms := imported[0].Alarms
+	if len(alarms) != 2 {
+		t.Fatalf("alarms = %d, want 2", len(alarms))
+	}
+
+	got := alarms[0].Location
+	if got == nil {
+		t.Fatal("alarm[0].Location should not be nil")
+	}
+	if got.Title != "Grocery Store" || got.Latitude != 37.3318 || got.Longitude != -122.0312 {
+		t.Errorf("location = %+v", got)
+	}
+	if got.Radius != 200 {
+		t.Errorf("Radius = %f, want 200", got.Radius)
+	}
+	if got.Proximity != "enter" {
+		t.Errorf("Proximity = %q, want enter", got.Proximity)
+	}
+
+	leave := alarms[1].Location
+	if leave == nil {
+		t.Fatal("alarm[1].Location should not be nil")
+	}
+	if leave.Proximity != "leave" {
+		t.Errorf("Proximity = %q, want leave", leave.Proximity)
+	}
+	if leave.Radius != 0 {
+		t.Errorf("Radius = %f, want 0 (system default)", leave.Radius)
+	}
+}

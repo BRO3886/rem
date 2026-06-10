@@ -68,6 +68,66 @@ func buildAlarms(hasDueDate bool, remindMe string, silent bool) ([]reminder.Alar
 	return nil, nil
 }
 
+// parseLocationAlarm builds a geofence alarm from the --location, --radius,
+// and --on-arrive/--on-leave flag values. The location format is "lat,lng"
+// (e.g. "37.3318,-122.0312"). Proximity defaults to arrive when neither flag
+// is set; setting both is an error. Radius is in meters; 0 means the system
+// default. The coordinate string doubles as the location title so
+// Reminders.app has something to display.
+func parseLocationAlarm(location string, radius float64, onArrive, onLeave bool) (reminder.Alarm, error) {
+	if onArrive && onLeave {
+		return reminder.Alarm{}, fmt.Errorf("--on-arrive and --on-leave are mutually exclusive")
+	}
+
+	parts := strings.Split(location, ",")
+	if len(parts) != 2 {
+		return reminder.Alarm{}, fmt.Errorf("invalid location: %q — use \"lat,lng\" (e.g. \"37.3318,-122.0312\")", location)
+	}
+	lat, latErr := strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
+	lng, lngErr := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
+	if latErr != nil || lngErr != nil {
+		return reminder.Alarm{}, fmt.Errorf("invalid location: %q — use \"lat,lng\" (e.g. \"37.3318,-122.0312\")", location)
+	}
+	if lat < -90 || lat > 90 {
+		return reminder.Alarm{}, fmt.Errorf("invalid latitude %v: must be between -90 and 90", lat)
+	}
+	if lng < -180 || lng > 180 {
+		return reminder.Alarm{}, fmt.Errorf("invalid longitude %v: must be between -180 and 180", lng)
+	}
+	if radius < 0 {
+		return reminder.Alarm{}, fmt.Errorf("invalid radius %v: must be >= 0 meters", radius)
+	}
+
+	proximity := "enter"
+	if onLeave {
+		proximity = "leave"
+	}
+
+	return reminder.Alarm{
+		Location: &reminder.AlarmLocation{
+			Title:     fmt.Sprintf("%.4f, %.4f", lat, lng),
+			Latitude:  lat,
+			Longitude: lng,
+			Radius:    radius,
+			Proximity: proximity,
+		},
+	}, nil
+}
+
+// splitAlarmsByTrigger separates a reminder's alarms into time-based and
+// location-based buckets so --remind-me and --location can each replace only
+// their own kind.
+func splitAlarmsByTrigger(alarms []reminder.Alarm) (timeAlarms, locationAlarms []reminder.Alarm) {
+	for _, a := range alarms {
+		if a.Location != nil {
+			locationAlarms = append(locationAlarms, a)
+		} else {
+			timeAlarms = append(timeAlarms, a)
+		}
+	}
+	return timeAlarms, locationAlarms
+}
+
 // weekdayNum maps day name strings to eventkit weekday numbers (1=Sun..7=Sat).
 var weekdayNum = map[string]int{
 	"sun": 1, "sunday": 1,

@@ -22,6 +22,10 @@ var (
 	addRepeat      string
 	addInteractive bool
 	addSilent      bool
+	addLocation    string
+	addRadius      float64
+	addOnArrive    bool
+	addOnLeave     bool
 )
 
 var addCmd = &cobra.Command{
@@ -34,6 +38,8 @@ var addCmd = &cobra.Command{
   rem add "Call dentist" --due "in 2 days" --notes "Ask about cleaning"
   rem add "Meeting" --due "tomorrow at 10am" --remind-me 15m
   rem add "Standup" --due "monday 9am" --repeat "weekly on mon,wed,fri"
+  rem add "Buy milk" --location "37.3318,-122.0312" --radius 200
+  rem add "Take out trash" --location "37.3318,-122.0312" --on-leave
   rem add -i  # Interactive mode`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if addInteractive {
@@ -67,6 +73,17 @@ var addCmd = &cobra.Command{
 			return err
 		}
 		r.Alarms = alarms
+
+		if addLocation == "" && (addRadius != 0 || addOnArrive || addOnLeave) {
+			return fmt.Errorf("--radius, --on-arrive, and --on-leave require --location")
+		}
+		if addLocation != "" {
+			locAlarm, err := parseLocationAlarm(addLocation, addRadius, addOnArrive, addOnLeave)
+			if err != nil {
+				return err
+			}
+			r.Alarms = append(r.Alarms, locAlarm)
+		}
 
 		if addRepeat != "" {
 			rule, err := parseRecurrence(addRepeat)
@@ -103,6 +120,10 @@ func init() {
 	addCmd.Flags().StringVarP(&addRemindMe, "remind-me", "r", "", "Set alarm: duration before due (15m, 1h, 2d) or absolute time")
 	addCmd.Flags().StringVar(&addRepeat, "repeat", "", "Set recurrence: daily, weekly, 'weekly on mon,wed,fri', monthly, yearly")
 	addCmd.Flags().BoolVar(&addSilent, "silent", false, "Don't auto-attach an alarm when --due is set")
+	addCmd.Flags().StringVar(&addLocation, "location", "", "Geofence trigger coordinates: \"lat,lng\" (e.g. \"37.3318,-122.0312\")")
+	addCmd.Flags().Float64Var(&addRadius, "radius", 0, "Geofence radius in meters (default: system minimum)")
+	addCmd.Flags().BoolVar(&addOnArrive, "on-arrive", false, "Fire the location alarm on arrival (default with --location)")
+	addCmd.Flags().BoolVar(&addOnLeave, "on-leave", false, "Fire the location alarm on departure")
 	addCmd.Flags().BoolVarP(&addInteractive, "interactive", "i", false, "Create reminder interactively")
 
 	rootCmd.AddCommand(addCmd)

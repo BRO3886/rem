@@ -172,7 +172,7 @@ func confirmSharedMove(id string, updates map[string]any, force bool) error {
 		return nil
 	}
 	if !isTTY() {
-		return fmt.Errorf("'%s' is a shared list: the move will copy the reminder and delete the original (new ID); pass --force/-f to proceed non-interactively", sharedList)
+		return fmt.Errorf("'%s' is a shared list: the move will copy the reminder and delete the original (new ID); pass --force/-f (or --yes/-y) to proceed non-interactively", sharedList)
 	}
 	confirmed, err := huhConfirm(fmt.Sprintf(
 		"'%s' is a shared list — macOS cannot truly move across it, so rem will copy the reminder and delete the original (it gets a new ID). Continue?",

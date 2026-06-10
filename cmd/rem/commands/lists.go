@@ -122,7 +122,7 @@ var listDeleteCmd = &cobra.Command{
 					return nil
 				}
 			} else {
-				return fmt.Errorf("use --force/-f to delete non-interactively, or run in a terminal")
+				return fmt.Errorf("use --force/-f (or --yes/-y) to delete non-interactively, or run in a terminal")
 			}
 		}
 

@@ -32,7 +32,7 @@ brew install rem-cli
 curl -fsSL https://rem.sidv.dev/install | bash
 ```
 
-Downloads the latest release, extracts, and installs to `/usr/local/bin`.
+Downloads the latest release, extracts, and installs to `~/.local/bin` (override with `INSTALL_DIR=...`). No sudo needed.
 
 ### Via Go
 
@@ -50,12 +50,12 @@ Download from [GitHub Releases](https://github.com/BRO3886/rem/releases):
 # Apple Silicon
 curl -LO https://github.com/BRO3886/rem/releases/latest/download/rem-darwin-arm64.tar.gz
 tar xzf rem-darwin-arm64.tar.gz
-sudo mv rem /usr/local/bin/rem
+mkdir -p ~/.local/bin && mv rem ~/.local/bin/rem
 
 # Intel
 curl -LO https://github.com/BRO3886/rem/releases/latest/download/rem-darwin-amd64.tar.gz
 tar xzf rem-darwin-amd64.tar.gz
-sudo mv rem /usr/local/bin/rem
+mkdir -p ~/.local/bin && mv rem ~/.local/bin/rem
 ```
 
 ### Build from source

@@ -3,7 +3,7 @@ module github.com/BRO3886/rem
 go 1.24.5
 
 require (
-	github.com/BRO3886/go-eventkit v0.10.0
+	github.com/BRO3886/go-eventkit v0.11.0
 	github.com/charmbracelet/huh v0.8.0
 	github.com/charmbracelet/x/term v0.2.1
 	github.com/fatih/color v1.18.0

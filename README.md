@@ -107,7 +107,7 @@ rem stats
 
 ```bash
 # Create
-rem add "Title" [--list LIST] [--due DATE] [--priority high|medium|low] [--notes TEXT] [--url URL] [--flagged] [--tags TAGS] [--remind-me DURATION] [--repeat PATTERN]
+rem add "Title" [--list LIST] [--due DATE] [--priority high|medium|low] [--notes TEXT] [--url URL] [-F/--flagged] [-t/--tags TAGS] [-r/--remind-me DURATION] [--repeat PATTERN]
 rem add -i                          # Interactive creation
 
 # List
@@ -119,7 +119,7 @@ rem show <id>                       # Full or partial ID
 rem get <id> -o json
 
 # Update
-rem update <id> [--name TEXT] [--due DATE] [--priority LEVEL] [--notes TEXT] [--url URL] [--add-tags TAGS] [--remove-tags TAGS] [--remind-me DURATION] [--repeat PATTERN] [--list LIST]
+rem update <id> [-t/--title TEXT] [--due DATE] [--priority LEVEL] [--notes TEXT] [--url URL] [--add-tags TAGS] [--remove-tags TAGS] [-r/--remind-me DURATION] [--repeat PATTERN] [--list LIST]
 
 # Complete / Uncomplete (support multiple IDs)
 rem complete <id> [id2 id3...]
@@ -132,7 +132,7 @@ rem unflag <id> [id2 id3...]
 
 # Delete (supports multiple IDs)
 rem delete <id> [id2 id3...]        # Asks for confirmation
-rem rm <id> --force                 # Skip confirmation (--yes / -y also work)
+rem rm <id> --force                 # Skip confirmation (-f / --yes / -y also work)
 
 # Today — due and overdue reminders
 rem today

@@ -25,9 +25,9 @@ rem add -i   # Interactive mode
 | `--priority` | `-p` | Priority: high, medium, low, none | none |
 | `--notes` | `-n` | Notes/body text | Empty |
 | `--url` | `-u` | URL to attach (shows in Reminders.app URL field) | None |
-| `--flagged` | `-f` | Flag the reminder | false |
-| `--tags` | — | Comma-separated native tags (e.g. `work,urgent`) | None |
-| `--remind-me` | — | Custom alarm: duration before due (15m, 1h, 2d) or absolute time | Auto: at due time when `--due` is set |
+| `--flagged` | `-F` | Flag the reminder | false |
+| `--tags` | `-t` | Comma-separated native tags (e.g. `work,urgent`) | None |
+| `--remind-me` | `-r` | Custom alarm: duration before due (15m, 1h, 2d) or absolute time | Auto: at due time when `--due` is set |
 | `--silent` | — | Don't auto-attach an alarm when `--due` is set | false |
 | `--repeat` | — | Set recurrence: daily, weekly, monthly, yearly, or 'weekly on mon,wed,fri' | None |
 | `--interactive` | `-i` | Create interactively | false |
@@ -89,9 +89,9 @@ Update properties of an existing reminder.
 ```bash
 rem update abc12345 --due "next monday"
 rem update abc12345 --notes "Updated notes" --priority medium
-rem update abc12345 --name "New title"
+rem update abc12345 --title "New title"
 rem update abc12345 --due none    # Clear due date
-rem update abc12345 --flagged true
+rem update abc12345 --flagged     # Set flagged; use rem unflag to clear
 rem update abc12345 --list "Work"  # Move to a different list
 rem update abc12345 --remind-me 15m
 rem update abc12345 --url https://github.com/org/repo/pull/42
@@ -105,21 +105,21 @@ rem update abc12345 -i            # Interactive mode
 
 **URLs.** `--url` writes to the native Reminders.app URL field (not notes/body). Pass `--url ""` to clear the URL.
 
-**Tags.** `--add-tags` and `--remove-tags` accept comma-separated tag names. Tags in `--name` are also parsed (e.g. `--name "Task #work"` adds the `work` tag). Tags use the private ReminderKit API and degrade gracefully if unavailable.
+**Tags.** `--add-tags` and `--remove-tags` accept comma-separated tag names. Tags in `--title` are also parsed (e.g. `--title "Task #work"` adds the `work` tag). Tags use the private ReminderKit API and degrade gracefully if unavailable.
 
 | Flag | Short | Description | Default |
 |------|-------|-------------|---------|
-| `--name` | — | New title | — |
+| `--title` | `-t` | New title | — |
 | `--list` | `-l` | Move reminder to a different list | — |
-| `--force` / `--yes` | `-y` | Skip the shared-list move confirmation | false |
+| `--force` / `--yes` | `-f` / `-y` | Skip the shared-list move confirmation | false |
 | `--due` | `-d` | New due date (use `none` to clear) | — |
 | `--notes` | `-n` | New notes/body | — |
 | `--priority` | `-p` | New priority: high, medium, low, none | — |
 | `--url` | `-u` | New URL (empty string to clear) | — |
-| `--flagged` | — | Set flagged: true/false | — |
+| `--flagged` | — | Set flagged state (use `rem unflag` to clear) | — |
 | `--add-tags` | — | Add comma-separated native tags | — |
 | `--remove-tags` | — | Remove comma-separated native tags | — |
-| `--remind-me` | — | Set alarm: duration (15m, 1h, 2d), 'none' to clear | — |
+| `--remind-me` | `-r` | Set alarm: duration (15m, 1h, 2d), 'none' to clear | — |
 | `--repeat` | — | Set recurrence: daily, weekly, monthly, yearly, 'none' to clear | — |
 | `--interactive` | `-i` | Update interactively | false |
 
@@ -139,7 +139,7 @@ rem rm abc12345 --force
 
 | Flag | Short | Description | Default |
 |------|-------|-------------|---------|
-| `--force` / `--yes` | `-y` | Skip confirmation | false |
+| `--force` / `--yes` | `-f` / `-y` | Skip confirmation | false |
 
 Aliases: `rm`, `remove`
 
@@ -243,7 +243,7 @@ rem lm rm "My List" --force
 
 | Flag | Short | Description | Default |
 |------|-------|-------------|---------|
-| `--force` / `--yes` | `-y` | Skip confirmation | false |
+| `--force` / `--yes` | `-f` / `-y` | Skip confirmation | false |
 
 Aliases: `lm rm`
 
@@ -351,8 +351,8 @@ rem export --incomplete --format json
 | Flag | Short | Description | Default |
 |------|-------|-------------|---------|
 | `--list` | `-l` | Export from a specific list | All lists |
-| `--format` | — | Export format: json, csv | json |
-| `--output-file` | — | Output file path | stdout |
+| `--format` | `-f` | Export format: json, csv | json |
+| `--output-file` | `-O` | Output file path | stdout |
 | `--incomplete` | — | Export only incomplete | false |
 
 ---
@@ -370,7 +370,7 @@ rem import --dry-run data.json
 | Flag | Short | Description | Default |
 |------|-------|-------------|---------|
 | `--list` | `-l` | Import all into this list | Original list names |
-| `--dry-run` | — | Preview without creating | false |
+| `--dry-run` | `-n` | Preview without creating | false |
 
 ---
 
@@ -411,9 +411,9 @@ rem skills install --agent openclaw         # Install for OpenClaw only
 rem skills install --agent all              # Install for all agents
 ```
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--agent` | Agent target: claude, codex, openclaw, or all | Interactive picker |
+| Flag | Short | Description | Default |
+|------|-------|-------------|---------|
+| `--agent` | `-a` | Agent target: claude, codex, openclaw, or all | Interactive picker |
 
 Supported targets:
 - `claude`   → `~/.claude/skills/rem-cli/`    (Claude Code, Copilot, Cursor, OpenCode, Augment)
@@ -433,9 +433,9 @@ rem skills uninstall --agent openclaw         # Uninstall from OpenClaw only
 rem skills uninstall --agent all              # Uninstall from all agents
 ```
 
-| Flag | Description | Default |
-|------|-------------|---------|
-| `--agent` | Agent target: claude, codex, openclaw, or all | Interactive picker |
+| Flag | Short | Description | Default |
+|------|-------|-------------|---------|
+| `--agent` | `-a` | Agent target: claude, codex, openclaw, or all | Interactive picker |
 
 ---
 

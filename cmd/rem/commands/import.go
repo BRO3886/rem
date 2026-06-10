@@ -100,6 +100,6 @@ var importCmd = &cobra.Command{
 
 func init() {
 	importCmd.Flags().StringVarP(&importList, "list", "l", "", "Import all reminders into this list")
-	importCmd.Flags().BoolVar(&importDryRun, "dry-run", false, "Preview import without creating reminders")
+	importCmd.Flags().BoolVarP(&importDryRun, "dry-run", "n", false, "Preview import without creating reminders")
 	rootCmd.AddCommand(importCmd)
 }

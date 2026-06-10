@@ -55,9 +55,9 @@ rem add "Review PR #work #urgent" --tags "deploy"          # native tags
 | `-p, --priority` | Priority: `high`, `medium`, `low`, `none` |
 | `-n, --notes` | Notes/body text |
 | `-u, --url` | URL (shows in Reminders.app URL field) |
-| `-f, --flagged` | Flag the reminder |
-| `--tags` | Comma-separated native tags (e.g. `work,urgent`) |
-| `--remind-me` | Custom alarm: duration before due (`15m`, `1h`, `2d`) or absolute time |
+| `-F, --flagged` | Flag the reminder |
+| `-t, --tags` | Comma-separated native tags (e.g. `work,urgent`) |
+| `-r, --remind-me` | Custom alarm: duration before due (`15m`, `1h`, `2d`) or absolute time |
 | `--silent` | Don't auto-attach an alarm when `--due` is set |
 | `--repeat` | Set recurrence: `daily`, `weekly`, `monthly`, `yearly`, or `weekly on mon,wed,fri` |
 | `-i, --interactive` | Step-by-step interactive creation |
@@ -112,24 +112,24 @@ rem update 6ECE --remove-tags "urgent"      # remove tags
 
 `--url` writes to the native Reminders.app URL field (not the notes body). Pass an empty string (`--url ""`) to clear.
 
-`--add-tags` and `--remove-tags` accept comma-separated tag names. Tags in `--name` are also parsed as hashtags. Tags use the private ReminderKit API and degrade gracefully if unavailable.
+`--add-tags` and `--remove-tags` accept comma-separated tag names. Tags in `--title` are also parsed as hashtags. Tags use the private ReminderKit API and degrade gracefully if unavailable.
 
-`--list` moves the reminder. Plain moves are native and keep the reminder's ID. Moving to or from a **shared list** is different: macOS has no true move across that boundary (Apple's own apps copy and delete behind the scenes), so rem copies the reminder — all fields preserved, including completed state — deletes the original, and prints a warning with the **new ID** on stderr. Because the ID changes, rem **asks for confirmation** before a shared-list move; pass `--force`/`-y` to skip the prompt (required in scripts — non-interactive runs refuse without it, same as `rem delete`). Re-resolve the ID after such a move.
+`--list` moves the reminder. Plain moves are native and keep the reminder's ID. Moving to or from a **shared list** is different: macOS has no true move across that boundary (Apple's own apps copy and delete behind the scenes), so rem copies the reminder — all fields preserved, including completed state — deletes the original, and prints a warning with the **new ID** on stderr. Because the ID changes, rem **asks for confirmation** before a shared-list move; pass `--force`/`-f` to skip the prompt (required in scripts — non-interactive runs refuse without it, same as `rem delete`). Re-resolve the ID after such a move.
 
 | Flag | Description |
 |------|-------------|
-| `--name` | New title |
+| `-t, --title` | New title |
 | `-l, --list` | Move reminder to a different list |
 | `-d, --due` | New due date |
 | `-p, --priority` | New priority |
 | `-n, --notes` | New notes |
 | `-u, --url` | New URL (empty string to clear) |
-| `--flagged` | Set flag: `true` or `false` |
+| `--flagged` | Set flagged state (use `rem unflag` to clear) |
 | `--add-tags` | Add comma-separated native tags |
 | `--remove-tags` | Remove comma-separated native tags |
-| `--remind-me` | Set alarm: duration (`15m`, `1h`, `2d`), `none` to clear |
+| `-r, --remind-me` | Set alarm: duration (`15m`, `1h`, `2d`), `none` to clear |
 | `--repeat` | Set recurrence: `daily`, `weekly`, `monthly`, `yearly`, `none` to clear |
-| `-y, --force`, `--yes` | Skip the shared-list move confirmation |
+| `-f, --force` / `-y, --yes` | Skip the shared-list move confirmation |
 | `-i, --interactive` | Interactive update |
 
 ### `rem complete`
@@ -175,7 +175,7 @@ rem delete 6ECE A1B2 --force    # batch delete, skip confirmation
 
 | Flag | Description |
 |------|-------------|
-| `--force` / `--yes` / `-y` | Skip the confirmation prompt |
+| `-f, --force` / `-y, --yes` | Skip the confirmation prompt |
 
 ## Search & Analytics
 
@@ -288,8 +288,8 @@ rem export --incomplete --format json
 | Flag | Description |
 |------|-------------|
 | `-l, --list` | Export from a specific list |
-| `--format` | `json` or `csv` (default: json) |
-| `--output-file` | File path (default: stdout) |
+| `-f, --format` | `json` or `csv` (default: json) |
+| `-O, --output-file` | File path (default: stdout) |
 | `--incomplete` | Export only incomplete reminders |
 
 ### `rem import`
@@ -304,7 +304,7 @@ rem import data.csv --list "Imported" --dry-run
 | Flag | Description |
 |------|-------------|
 | `-l, --list` | Import into this list (overrides source list) |
-| `--dry-run` | Preview what would be created without creating |
+| `-n, --dry-run` | Preview what would be created without creating |
 
 ## Interactive Mode
 
@@ -343,7 +343,7 @@ rem skills install --agent all             # All agents
 
 | Flag | Description |
 |------|-------------|
-| `--agent` | Target agent: `claude`, `codex`, `openclaw`, or `all` (default: interactive picker) |
+| `-a, --agent` | Target agent: `claude`, `codex`, `openclaw`, or `all` (default: interactive picker) |
 
 ### `rem skills uninstall`
 
@@ -355,7 +355,7 @@ rem skills uninstall --agent claude
 
 | Flag | Description |
 |------|-------------|
-| `--agent` | Target agent: `claude`, `codex`, `openclaw`, or `all` (default: interactive picker) |
+| `-a, --agent` | Target agent: `claude`, `codex`, `openclaw`, or `all` (default: interactive picker) |
 
 ### `rem skills status`
 

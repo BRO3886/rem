@@ -46,7 +46,7 @@ Without --agent, shows an interactive picker to select which agents to install f
 }
 
 func init() {
-	skillsInstallCmd.Flags().StringVar(&skillsAgentFlag, "agent", "", "Agent target: claude, codex, openclaw, or all")
+	skillsInstallCmd.Flags().StringVarP(&skillsAgentFlag, "agent", "a", "", "Agent target: claude, codex, openclaw, or all")
 	skillsCmd.AddCommand(skillsInstallCmd)
 }
 
@@ -96,7 +96,7 @@ var skillsUninstallCmd = &cobra.Command{
 }
 
 func init() {
-	skillsUninstallCmd.Flags().StringVar(&skillsAgentFlag, "agent", "", "Agent target: claude, codex, openclaw, or all")
+	skillsUninstallCmd.Flags().StringVarP(&skillsAgentFlag, "agent", "a", "", "Agent target: claude, codex, openclaw, or all")
 	skillsCmd.AddCommand(skillsUninstallCmd)
 }
 
@@ -311,4 +311,3 @@ func runAgentPicker(allTargets []skills.AgentTarget, homeDir, action string) ([]
 
 	return targets, nil
 }
-

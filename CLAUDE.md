@@ -84,5 +84,11 @@ Release steps in order — do not skip or reorder:
 - Install script served at `rem.sidv.dev/install` (from `website/static/install`)
 - Domain: `sidv.dev` (owned by user, managed on Cloudflare)
 
+## IndexNow
+- `make indexnow` fetches the live sitemap and submits each URL to IndexNow (notifies Bing/Microsoft, Yandex, Naver, Seznam, Yep in one shot).
+- **Run only after a deploy whose content changed** — submissions before the key file is live will be rejected (HTTP 403).
+- The key lives in two places that must stay in sync: `website/static/785f0399d4f64b1d1775006ca113f39f.txt` (file name and single-line contents both equal the key) and the `KEY` variable in `scripts/indexnow.sh`. If you rotate the key, update both.
+- The script (`scripts/indexnow.sh`) is zero-dependency POSIX sh; it treats HTTP 200 and 202 as success and prints the HTTP code on any other response.
+
 ## Journal
 Engineering journals live in `journals/` dir. See `.claude/commands/journal.md` for the journaling command.

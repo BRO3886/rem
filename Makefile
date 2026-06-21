@@ -4,7 +4,7 @@ COMMIT=$(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
 BUILD_TIME=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 LDFLAGS=-ldflags "-X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.buildTime=$(BUILD_TIME)"
 
-.PHONY: all build install test clean lint fmt help completions release
+.PHONY: all build install test clean lint fmt help completions release indexnow
 
 all: build
 
@@ -37,6 +37,9 @@ release: ## Build release tarballs for GitHub upload (arm64 + amd64)
 		rm bin/rem; \
 	done
 	@echo "Upload bin/rem-darwin-{arm64,amd64}.tar.gz to GitHub Releases"
+
+indexnow: ## Submit live sitemap URLs to IndexNow (run after a content-changing deploy)
+	@sh scripts/indexnow.sh
 
 clean: ## Remove built binaries
 	rm -rf bin/

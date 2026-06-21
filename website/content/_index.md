@@ -1,6 +1,6 @@
 ---
-title: "rem — CLI for macOS Reminders"
-description: "rem is a fast command-line interface for macOS Reminders. Built with Go and EventKit via cgo, it reads and writes reminders in under 200ms. Supports natural language dates, JSON/CSV export, interactive mode, and AI agent skills for Claude Code, Codex, and OpenClaw."
+title: "rem — CLI for Apple Reminders"
+description: "rem is a fast command-line interface for Apple Reminders. Built with Go and EventKit via cgo, it reads and writes reminders in under 200ms. Supports natural language dates, JSON/CSV export, interactive mode, and AI agent skills for Claude Code, Codex, and OpenClaw."
 keywords:
   - rem CLI macOS Reminders
   - macOS Reminders command line

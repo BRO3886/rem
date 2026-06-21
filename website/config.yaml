@@ -1,10 +1,10 @@
 baseURL: "https://rem.sidv.dev/"
 languageCode: "en-us"
-title: "rem — CLI for macOS Reminders"
+title: "rem — CLI for Apple Reminders"
 theme: "rem-docs"
 
 params:
-  description: "rem is a fast command-line interface for macOS Reminders. Built with Go and EventKit via cgo, it reads and writes reminders in under 200ms — faster than any AppleScript or JXA approach. Supports natural language dates, JSON/CSV export, interactive mode, and AI agent skills."
+  description: "rem is a fast command-line interface for Apple Reminders. Built with Go and EventKit via cgo, it reads and writes reminders in under 200ms — faster than any AppleScript or JXA approach. Supports natural language dates, JSON/CSV export, interactive mode, and AI agent skills."
   author: "Siddharth Verma"
   github: "https://github.com/BRO3886/rem"
   ogImage: "/images/og-image.png"

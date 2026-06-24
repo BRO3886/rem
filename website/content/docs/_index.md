@@ -1,6 +1,6 @@
 ---
 title: "Documentation"
-description: "Complete documentation for the rem CLI tool."
+description: "Documentation for rem, the fast CLI for Apple Reminders: getting started, reference for all 20 commands, architecture, Go API, and performance benchmarks."
 ---
 
 ## Documentation

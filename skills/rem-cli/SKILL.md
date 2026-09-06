@@ -14,18 +14,11 @@ metadata:
 
 rem is a single-binary Go CLI that reads and writes the Apple Reminders database in under 200ms via EventKit (cgo). Every `rem` invocation is fast and safe to run.
 
-## Current time (do not guess, use these values)
+## Relative time
 
-- Today: !`date +"%A, %B %-d, %Y"`
-- ISO date: !`date +"%Y-%m-%d"`
-- Local time: !`date +"%H:%M %Z"`
-- Day of week: !`date +"%A"`
-- Tomorrow (ISO): !`date -v+1d +"%Y-%m-%d"`
-- Next Friday (ISO, always forward): !`date -v+1d -v+fri +"%Y-%m-%d"`
+**When the user says relative dates like "tomorrow", "next friday", "end of week", or "last tuesday", use the `--due` flag. Don't guess from training data.**
 
-**When the user says relative dates like "tomorrow", "next friday", "end of week", or "last tuesday", resolve them against the values above before calling rem.** Don't ask the user "what is today" and don't guess from training data.
-
-rem's `--due` flag accepts natural language directly (see [references/dates.md](references/dates.md)), so in many cases you can pass the user's phrase through verbatim. But if the user asks something ambiguous ("what was I supposed to do yesterday?"), use the ISO date above and query rem with `--due-before` / `--due-after` against an exact date.
+rem's `--due` flag accepts natural language directly (see [references/dates.md](references/dates.md)), so in many cases you can pass the user's phrase through verbatim.
 
 ## When to use this skill
 

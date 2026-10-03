@@ -222,6 +222,70 @@ func TestParseRecurrenceDisplayNames(t *testing.T) {
 	}
 }
 
+func TestParseRepeatUntil(t *testing.T) {
+	t.Run("date runs through the end of that day", func(t *testing.T) {
+		end, err := parseRepeatUntil("2026-10-10")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if end == nil || end.EndDate == nil {
+			t.Fatalf("expected an end date, got %+v", end)
+		}
+		want := time.Date(2026, 10, 10, 23, 59, 59, 0, time.Local)
+		if !end.EndDate.Equal(want) {
+			t.Errorf("end date: got %v, want %v", *end.EndDate, want)
+		}
+		if end.OccurrenceCount != 0 {
+			t.Errorf("occurrence count: got %d, want 0", end.OccurrenceCount)
+		}
+	})
+
+	t.Run("time of day is ignored", func(t *testing.T) {
+		end, err := parseRepeatUntil("2026-10-10 08:00")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		want := time.Date(2026, 10, 10, 23, 59, 59, 0, time.Local)
+		if !end.EndDate.Equal(want) {
+			t.Errorf("end date: got %v, want %v", *end.EndDate, want)
+		}
+	})
+
+	t.Run("none clears the end", func(t *testing.T) {
+		for _, input := range []string{"none", "NONE", " none "} {
+			end, err := parseRepeatUntil(input)
+			if err != nil {
+				t.Fatalf("unexpected error for %q: %v", input, err)
+			}
+			if end != nil {
+				t.Errorf("expected nil end for %q, got %+v", input, end)
+			}
+		}
+	})
+
+	t.Run("invalid date", func(t *testing.T) {
+		if _, err := parseRepeatUntil("not a date"); err == nil {
+			t.Error("expected error, got nil")
+		}
+	})
+}
+
+func TestParseRepeatCount(t *testing.T) {
+	end, err := parseRepeatCount(7)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if end.OccurrenceCount != 7 || end.EndDate != nil {
+		t.Errorf("got %+v, want OccurrenceCount=7 and no EndDate", end)
+	}
+
+	for _, n := range []int{0, -1} {
+		if _, err := parseRepeatCount(n); err == nil {
+			t.Errorf("expected error for count %d, got nil", n)
+		}
+	}
+}
+
 func TestUnflagFilter(t *testing.T) {
 	t.Run("shows incomplete reminders", func(t *testing.T) {
 		f := unflagFilter("")

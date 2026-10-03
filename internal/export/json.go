@@ -32,6 +32,8 @@ type JSONRecurrenceRule struct {
 	Frequency   string   `json:"frequency"`   // daily, weekly, monthly, yearly
 	Interval    int      `json:"interval"`
 	DaysOfWeek  []string `json:"days_of_week,omitempty"`
+	EndDate     *string  `json:"end_date,omitempty"`
+	EndCount    int      `json:"end_count,omitempty"`
 }
 
 // JSONReminder is the JSON-serializable representation of a reminder.
@@ -104,12 +106,17 @@ func ToJSON(r *reminder.Reminder) JSONReminder {
 	}
 
 	for _, rule := range r.RecurrenceRules {
-		jr.RecurrenceRules = append(jr.RecurrenceRules, JSONRecurrenceRule{
+		jrr := JSONRecurrenceRule{
 			Description: rule.String(),
 			Frequency:   frequencyString(rule.Frequency),
 			Interval:    rule.Interval,
 			DaysOfWeek:  rule.DaysOfWeek,
-		})
+		}
+		if rule.End != nil {
+			jrr.EndDate = formatTimePtr(rule.End.EndDate)
+			jrr.EndCount = rule.End.OccurrenceCount
+		}
+		jr.RecurrenceRules = append(jr.RecurrenceRules, jrr)
 	}
 
 	for _, a := range r.Alarms {

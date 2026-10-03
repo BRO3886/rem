@@ -38,6 +38,8 @@ rem add -i   # Interactive mode
 | `--on-arrive` | — | Fire location alarm on arrival | true with `--location` |
 | `--on-leave` | — | Fire location alarm on departure | false |
 | `--repeat` | — | Set recurrence: daily, weekly, monthly, yearly, or 'weekly on mon,wed,fri' | None |
+| `--repeat-until` | — | Stop repeating after this date, inclusive (requires `--repeat`) | Never |
+| `--repeat-count` | — | Stop repeating after N occurrences (requires `--repeat`) | Never |
 | `--interactive` | `-i` | Create interactively | false |
 
 Aliases: `create`, `new`
@@ -137,6 +139,8 @@ rem update abc12345 -i            # Interactive mode
 | `--on-arrive` | — | Fire location alarm on arrival | true with `--location` |
 | `--on-leave` | — | Fire location alarm on departure | false |
 | `--repeat` | — | Set recurrence: daily, weekly, monthly, yearly, 'none' to clear | — |
+| `--repeat-until` | — | Stop repeating after this date, inclusive; 'none' to repeat forever. Without `--repeat`, changes only the end of the existing rule | — |
+| `--repeat-count` | — | Stop repeating after N occurrences. Without `--repeat`, changes only the end of the existing rule | — |
 | `--interactive` | `-i` | Update interactively | false |
 
 Aliases: `edit`

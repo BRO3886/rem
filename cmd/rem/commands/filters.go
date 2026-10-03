@@ -9,6 +9,7 @@ import (
 
 	"github.com/BRO3886/go-eventkit/dateparser"
 	"github.com/BRO3886/rem/internal/reminder"
+	"github.com/spf13/cobra"
 )
 
 // parseDate wraps dateparser.ParseDate with rem's default options:
@@ -226,6 +227,47 @@ func parseRecurrence(input string) (reminder.RecurrenceRule, error) {
 	}
 
 	return rule, nil
+}
+
+// parseRepeatUntil parses a --repeat-until value. The date is inclusive: the
+// recurrence runs through the end of that day, matching the date-only
+// "End Repeat" picker in Reminders.app. "none" means the recurrence never ends.
+func parseRepeatUntil(input string) (*reminder.RecurrenceEnd, error) {
+	if strings.TrimSpace(strings.ToLower(input)) == "none" {
+		return nil, nil
+	}
+	t, err := parseDate(input)
+	if err != nil {
+		return nil, fmt.Errorf("invalid --repeat-until date: %w", err)
+	}
+	endOfDay := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, t.Location())
+	return &reminder.RecurrenceEnd{EndDate: &endOfDay}, nil
+}
+
+// parseRepeatCount validates a --repeat-count value.
+func parseRepeatCount(count int) (*reminder.RecurrenceEnd, error) {
+	if count < 1 {
+		return nil, fmt.Errorf("invalid --repeat-count %d: must be >= 1", count)
+	}
+	return &reminder.RecurrenceEnd{OccurrenceCount: count}, nil
+}
+
+// recurrenceEndChanged reports whether --repeat-until or --repeat-count was set.
+func recurrenceEndChanged(cmd *cobra.Command) bool {
+	return cmd.Flags().Changed("repeat-until") || cmd.Flags().Changed("repeat-count")
+}
+
+// recurrenceEndFromFlags builds the recurrence end from --repeat-until or
+// --repeat-count (mutually exclusive, enforced by cobra). Nil means no end.
+func recurrenceEndFromFlags(cmd *cobra.Command, until string, count int) (*reminder.RecurrenceEnd, error) {
+	switch {
+	case cmd.Flags().Changed("repeat-until"):
+		return parseRepeatUntil(until)
+	case cmd.Flags().Changed("repeat-count"):
+		return parseRepeatCount(count)
+	default:
+		return nil, nil
+	}
 }
 
 func normalizeTag(tag string) string {

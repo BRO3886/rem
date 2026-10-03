@@ -1,6 +1,9 @@
 package reminder
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestPriorityString(t *testing.T) {
 	tests := []struct {
@@ -99,5 +102,23 @@ func TestAlarmStringPrefersLocation(t *testing.T) {
 	}
 	if got := a.String(); got != "on leaving Home" {
 		t.Errorf("String() = %q, want location description", got)
+	}
+}
+
+func TestRecurrenceRuleStringWithEnd(t *testing.T) {
+	endDate := time.Date(2026, 10, 10, 23, 59, 59, 0, time.Local)
+	tests := []struct {
+		rule RecurrenceRule
+		want string
+	}{
+		{RecurrenceRule{Frequency: FrequencyDaily, Interval: 1}, "every day"},
+		{RecurrenceRule{Frequency: FrequencyDaily, Interval: 1, End: &RecurrenceEnd{EndDate: &endDate}}, "every day, until Sat Oct 10, 2026"},
+		{RecurrenceRule{Frequency: FrequencyWeekly, Interval: 1, DaysOfWeek: []string{"Mon", "Fri"}, End: &RecurrenceEnd{OccurrenceCount: 5}}, "every week on Mon, Fri, 5 times"},
+		{RecurrenceRule{Frequency: FrequencyMonthly, Interval: 2, End: &RecurrenceEnd{OccurrenceCount: 1}}, "every 2 months, 1 time"},
+	}
+	for _, tt := range tests {
+		if got := tt.rule.String(); got != tt.want {
+			t.Errorf("String() = %q, want %q", got, tt.want)
+		}
 	}
 }

@@ -94,6 +94,32 @@ func TestToJSONAlarmsAlwaysPresent(t *testing.T) {
 	}
 }
 
+func TestToJSONRecurrenceEnd(t *testing.T) {
+	endDate := time.Date(2026, 10, 10, 23, 59, 59, 0, time.Local)
+	r := &reminder.Reminder{
+		ID:        "recurring",
+		Name:      "Recurring",
+		ListName:  "Test",
+		Recurring: true,
+		RecurrenceRules: []reminder.RecurrenceRule{
+			{Frequency: reminder.FrequencyDaily, Interval: 1, End: &reminder.RecurrenceEnd{EndDate: &endDate}},
+			{Frequency: reminder.FrequencyWeekly, Interval: 1, End: &reminder.RecurrenceEnd{OccurrenceCount: 3}},
+			{Frequency: reminder.FrequencyMonthly, Interval: 1},
+		},
+	}
+	rules := ToJSON(r).RecurrenceRules
+
+	if rules[0].EndDate == nil || *rules[0].EndDate != "2026-10-10T23:59:59" || rules[0].EndCount != 0 {
+		t.Errorf("date end: got end_date=%v end_count=%d", rules[0].EndDate, rules[0].EndCount)
+	}
+	if rules[1].EndDate != nil || rules[1].EndCount != 3 {
+		t.Errorf("count end: got end_date=%v end_count=%d", rules[1].EndDate, rules[1].EndCount)
+	}
+	if rules[2].EndDate != nil || rules[2].EndCount != 0 {
+		t.Errorf("no end: got end_date=%v end_count=%d", rules[2].EndDate, rules[2].EndCount)
+	}
+}
+
 func TestImportJSON(t *testing.T) {
 	jsonData := `[
 		{

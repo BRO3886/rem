@@ -183,7 +183,7 @@ type Reminder struct {
 	Body             string
 	ListName         string
 	DueDate          *time.Time
-	AllDayDueDate    *time.Time
+	AllDay           bool // DueDate has no time of day (midnight local on that date)
 	RemindMeDate     *time.Time
 	CompletionDate   *time.Time
 	CreationDate     *time.Time
@@ -197,6 +197,21 @@ type Reminder struct {
 	RecurrenceRules  []RecurrenceRule
 	HasAlarms        bool
 	Alarms           []Alarm
+}
+
+// IsOverdue reports whether an incomplete reminder's due date has passed.
+// An all-day reminder is due for the whole day, so it only becomes overdue
+// once that day has ended.
+func (r *Reminder) IsOverdue(now time.Time) bool {
+	if r.DueDate == nil || r.Completed {
+		return false
+	}
+	if r.AllDay {
+		d := r.DueDate.In(now.Location())
+		endOfDay := time.Date(d.Year(), d.Month(), d.Day()+1, 0, 0, 0, 0, now.Location())
+		return !now.Before(endOfDay)
+	}
+	return r.DueDate.Before(now)
 }
 
 // List represents a Reminders list.

@@ -1,6 +1,9 @@
 package reminder
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestPriorityString(t *testing.T) {
 	tests := []struct {
@@ -99,5 +102,36 @@ func TestAlarmStringPrefersLocation(t *testing.T) {
 	}
 	if got := a.String(); got != "on leaving Home" {
 		t.Errorf("String() = %q, want location description", got)
+	}
+}
+
+func TestIsOverdue(t *testing.T) {
+	now := time.Date(2026, 9, 29, 10, 0, 0, 0, time.Local)
+	at := func(y int, m time.Month, d, h int) *time.Time {
+		t := time.Date(y, m, d, h, 0, 0, 0, time.Local)
+		return &t
+	}
+
+	tests := []struct {
+		name string
+		r    Reminder
+		want bool
+	}{
+		{"no due date", Reminder{}, false},
+		{"timed, past", Reminder{DueDate: at(2026, 9, 29, 9)}, true},
+		{"timed, future", Reminder{DueDate: at(2026, 9, 29, 11)}, false},
+		{"timed midnight today is overdue", Reminder{DueDate: at(2026, 9, 29, 0)}, true},
+		{"all-day today is not overdue", Reminder{DueDate: at(2026, 9, 29, 0), AllDay: true}, false},
+		{"all-day yesterday is overdue", Reminder{DueDate: at(2026, 9, 28, 0), AllDay: true}, true},
+		{"all-day tomorrow is not overdue", Reminder{DueDate: at(2026, 9, 30, 0), AllDay: true}, false},
+		{"completed is never overdue", Reminder{DueDate: at(2026, 9, 28, 0), Completed: true}, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.r.IsOverdue(now); got != tt.want {
+				t.Errorf("IsOverdue() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

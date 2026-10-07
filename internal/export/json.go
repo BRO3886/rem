@@ -41,6 +41,7 @@ type JSONReminder struct {
 	Body             string               `json:"body,omitempty"`
 	ListName         string               `json:"list_name"`
 	DueDate          *string              `json:"due_date,omitempty"`
+	DueAllDay        bool                 `json:"due_all_day,omitempty"` // due_date has no time of day
 	RemindMeDate     *string              `json:"remind_me_date,omitempty"`
 	CompletionDate   *string              `json:"completion_date,omitempty"`
 	CreationDate     *string              `json:"creation_date,omitempty"`
@@ -89,6 +90,7 @@ func ToJSON(r *reminder.Reminder) JSONReminder {
 		Body:             r.Body,
 		ListName:         r.ListName,
 		DueDate:          formatTimePtr(r.DueDate),
+		DueAllDay:        r.AllDay && r.DueDate != nil,
 		RemindMeDate:     formatTimePtr(r.RemindMeDate),
 		CompletionDate:   formatTimePtr(r.CompletionDate),
 		CreationDate:     formatTimePtr(r.CreationDate),
@@ -173,6 +175,7 @@ func ImportJSON(r io.Reader) ([]*reminder.Reminder, error) {
 			t, err := time.ParseInLocation(timeFormat, *jr.DueDate, time.Now().Location())
 			if err == nil {
 				rem.DueDate = &t
+				rem.AllDay = jr.DueAllDay
 			}
 		}
 		if jr.RemindMeDate != nil {

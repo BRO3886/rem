@@ -39,7 +39,7 @@ var statsCmd = &cobra.Command{
 			if r.Flagged {
 				flagged++
 			}
-			if r.DueDate != nil && r.DueDate.Before(now) && !r.Completed {
+			if r.IsOverdue(now) {
 				overdue++
 			}
 		}
@@ -99,7 +99,7 @@ var overdueCmd = &cobra.Command{
 		now := time.Now()
 		var overdue []*reminder.Reminder
 		for _, r := range reminders {
-			if r.DueDate != nil && r.DueDate.Before(now) {
+			if r.IsOverdue(now) {
 				overdue = append(overdue, r)
 			}
 		}

@@ -2,7 +2,9 @@ package commands
 
 import (
 	"fmt"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/BRO3886/rem/internal/reminder"
 	"github.com/charmbracelet/huh"
@@ -13,6 +15,7 @@ var (
 	updateTitle          string
 	updateNotes          string
 	updateDue            string
+	updateAllDay         bool
 	updatePriority       string
 	updateURL            string
 	updateFlagged        bool
@@ -35,6 +38,8 @@ var updateCmd = &cobra.Command{
 	Short:   "Update an existing reminder",
 	Long:    `Update properties of an existing reminder by its ID.`,
 	Example: `  rem update abc12345 --due "next monday"
+  rem update abc12345 --due 2026-03-01        # all-day
+  rem update abc12345 --all-day               # make the current due date all-day
   rem update abc12345 --notes "Updated notes" --priority medium
   rem edit abc12345 --title "New title"
   rem update abc12345 --list "Work"
@@ -80,14 +85,27 @@ var updateCmd = &cobra.Command{
 		}
 		if cmd.Flags().Changed("due") {
 			if updateDue == "" || updateDue == "none" {
+				if updateAllDay {
+					return fmt.Errorf("--all-day can't be used when clearing the due date")
+				}
 				updates["due_date"] = nil
 			} else {
-				t, err := parseDate(updateDue)
+				// An all-day reminder stays all-day unless the new value
+				// has a time of day.
+				t, allDay, err := parseDue(updateDue, updateAllDay, r.AllDay)
 				if err != nil {
 					return fmt.Errorf("invalid due date: %w", err)
 				}
 				updates["due_date"] = t
+				updates["due_all_day"] = allDay
 			}
+		} else if updateAllDay {
+			if r.DueDate == nil {
+				return fmt.Errorf("--all-day needs a due date: pass --due too")
+			}
+			d := r.DueDate.Local()
+			updates["due_date"] = time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, time.Local)
+			updates["due_all_day"] = true
 		}
 		if cmd.Flags().Changed("priority") {
 			updates["priority"] = reminder.ParsePriority(updatePriority)
@@ -155,6 +173,10 @@ var updateCmd = &cobra.Command{
 			}
 		}
 
+		if !remindChanged {
+			dropAlarmsForAllDay(r, updates)
+		}
+
 		if len(updates) == 0 {
 			return fmt.Errorf("no updates specified")
 		}
@@ -176,7 +198,8 @@ var updateCmd = &cobra.Command{
 func init() {
 	updateCmd.Flags().StringVarP(&updateTitle, "title", "t", "", "New title")
 	updateCmd.Flags().StringVarP(&updateNotes, "notes", "n", "", "New notes/body")
-	updateCmd.Flags().StringVarP(&updateDue, "due", "d", "", "New due date (use 'none' to clear)")
+	updateCmd.Flags().StringVarP(&updateDue, "due", "d", "", "New due date (use 'none' to clear); a date without a time ('2026-02-15') is all-day")
+	updateCmd.Flags().BoolVar(&updateAllDay, "all-day", false, "Make the due date all-day (no time of day); alone, converts the current due date")
 	updateCmd.Flags().StringVarP(&updatePriority, "priority", "p", "", "New priority: high, medium, low, none")
 	updateCmd.Flags().StringVarP(&updateURL, "url", "u", "", "New URL")
 	updateCmd.Flags().BoolVar(&updateFlagged, "flagged", false, "Set flagged state (use rem unflag to clear)")
@@ -194,6 +217,29 @@ func init() {
 	updateCmd.Flags().BoolVarP(&updateForce, "yes", "y", false, "Skip the shared-list move confirmation (alias for --force)")
 
 	rootCmd.AddCommand(updateCmd)
+}
+
+// dropAlarmsForAllDay removes "at the due time" alarms when the updates turn
+// a timed due into an all-day one: with no time of day, the alarm would fire
+// at midnight. Callers skip it when --remind-me sets the alarms explicitly.
+func dropAlarmsForAllDay(r *reminder.Reminder, updates map[string]any) {
+	if allDay, _ := updates["due_all_day"].(bool); !allDay || r.AllDay || r.DueDate == nil {
+		return
+	}
+	current := r.Alarms
+	if v, ok := updates["alarms"]; ok {
+		current, _ = v.([]reminder.Alarm) // nil means all alarms are being cleared
+	}
+	kept, dropped := dropDueTimeAlarms(current)
+	if !dropped {
+		return
+	}
+	if len(kept) == 0 {
+		updates["alarms"] = nil
+	} else {
+		updates["alarms"] = kept
+	}
+	fmt.Fprintln(os.Stderr, "Note: removed the alarm at the due time, since an all-day due has no time. Use --remind-me to set one.")
 }
 
 // confirmSharedMove prompts before a move that involves a shared list, where
@@ -390,13 +436,16 @@ func runUpdateInteractive(idArg string) error {
 		if dueStr == "" || dueStr == "none" {
 			updates["due_date"] = nil
 		} else {
-			t, err := parseDate(dueStr)
+			t, allDay, err := parseDue(dueStr, false, r.AllDay)
 			if err != nil {
 				return fmt.Errorf("invalid due date: %w", err)
 			}
 			updates["due_date"] = t
+			updates["due_all_day"] = allDay
 		}
 	}
+
+	dropAlarmsForAllDay(r, updates)
 
 	if newFlagged != r.Flagged {
 		updates["flagged"] = newFlagged

@@ -3,6 +3,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -33,11 +34,12 @@ func (s *ReminderService) CreateReminder(r *reminder.Reminder) (string, error) {
 	}
 
 	input := reminders.CreateReminderInput{
-		Title:    r.Name,
-		Notes:    r.Body,
-		ListName: r.ListName,
-		DueDate:  r.DueDate,
-		Priority: reminders.Priority(r.Priority),
+		Title:         r.Name,
+		Notes:         r.Body,
+		ListName:      r.ListName,
+		DueDate:       r.DueDate,
+		DueDateAllDay: r.AllDay,
+		Priority:      reminders.Priority(r.Priority),
 	}
 
 	if r.RemindMeDate != nil {
@@ -84,9 +86,50 @@ func (s *ReminderService) CreateReminder(r *reminder.Reminder) (string, error) {
 func (s *ReminderService) GetReminder(id string) (*reminder.Reminder, error) {
 	r, err := s.client.Reminder(id)
 	if err != nil {
+		if amb := ambiguousIDError(err); amb != nil {
+			return nil, amb
+		}
 		return nil, fmt.Errorf("reminder not found: %s", id)
 	}
 	return fromEventKitReminder(r), nil
+}
+
+// maxAmbiguousCandidates caps how many matches an ambiguous-ID error lists.
+const maxAmbiguousCandidates = 10
+
+// AmbiguousIDError reports an ID prefix that matches more than one reminder.
+// Commands must never act on one of the candidates; the user picks.
+type AmbiguousIDError struct {
+	Prefix     string
+	Candidates []*reminder.Reminder
+}
+
+func (e *AmbiguousIDError) Error() string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "ID prefix %q is ambiguous: it matches %d reminders.\n", e.Prefix, len(e.Candidates))
+	for i, c := range e.Candidates {
+		if i == maxAmbiguousCandidates {
+			fmt.Fprintf(&b, "  ...and %d more\n", len(e.Candidates)-maxAmbiguousCandidates)
+			break
+		}
+		fmt.Fprintf(&b, "  %s  %s  (%s)\n", c.ID, c.Name, c.ListName)
+	}
+	b.WriteString("Use a longer prefix or the full ID.")
+	return b.String()
+}
+
+// ambiguousIDError converts go-eventkit's ambiguous-prefix error, or returns
+// nil for any other error.
+func ambiguousIDError(err error) *AmbiguousIDError {
+	var ekErr *reminders.AmbiguousIDError
+	if !errors.As(err, &ekErr) {
+		return nil
+	}
+	amb := &AmbiguousIDError{Prefix: ekErr.Prefix}
+	for i := range ekErr.Candidates {
+		amb.Candidates = append(amb.Candidates, fromEventKitReminder(&ekErr.Candidates[i]))
+	}
+	return amb
 }
 
 // ListReminders returns reminders matching the given filter.
@@ -207,6 +250,9 @@ func (s *ReminderService) UpdateReminder(id string, updates map[string]any) erro
 				t := value.(time.Time)
 				input.DueDate = &t
 			}
+		case "due_all_day":
+			// Applies to due_date: save only its calendar date.
+			input.DueDateAllDay = value.(bool)
 		case "remind_me_date":
 			if value == nil {
 				// Clear remind me date by setting to zero time
@@ -326,6 +372,7 @@ func (s *ReminderService) moveViaCopy(id, targetList, sharedList string) error {
 		Notes:           r.Notes,
 		ListName:        targetList,
 		DueDate:         r.DueDate,
+		DueDateAllDay:   r.DueDateAllDay,
 		RemindMeDate:    r.RemindMeDate,
 		Priority:        r.Priority,
 		URL:             r.URL,
@@ -455,6 +502,7 @@ func fromEventKitReminder(r *reminders.Reminder) *reminder.Reminder {
 		Body:             r.Notes,
 		ListName:         r.List,
 		DueDate:          r.DueDate,
+		AllDay:           r.DueDateAllDay,
 		RemindMeDate:     r.RemindMeDate,
 		CompletionDate:   r.CompletionDate,
 		CreationDate:     r.CreatedAt,

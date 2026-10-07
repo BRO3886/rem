@@ -44,7 +44,9 @@ rem add "Take out trash" --location "37.3318,-122.0312" --on-leave
 
 **Aliases:** `create`, `new`
 
-**Notifications.** When `--due` is set, rem auto-attaches an alarm at the due time so the system actually fires a notification — matching Apple Reminders.app default behavior. Use `--remind-me` to override the timing (e.g. `15m` for 15 minutes before), or `--silent` to suppress the auto-alarm entirely.
+**All-day due dates.** A calendar date with no time (`--due 2026-03-01`) is saved as a true all-day reminder: no time of day, and not overdue until the day is over. Natural-language days (`tomorrow`, `friday`) default to 9 AM; add `--all-day` to make them all-day. All-day dues get no auto-alarm.
+
+**Notifications.** When `--due` is set with a time of day, rem auto-attaches an alarm at the due time so the system actually fires a notification — matching Apple Reminders.app default behavior. Use `--remind-me` to override the timing (e.g. `15m` for 15 minutes before), or `--silent` to suppress the auto-alarm entirely.
 
 **URLs.** `--url` writes to the real Reminders.app URL field (not the notes body), so URLs show up with Apple's native link card rendering in the Reminders.app UI.
 
@@ -55,7 +57,8 @@ rem add "Take out trash" --location "37.3318,-122.0312" --on-leave
 | Flag | Description |
 |------|-------------|
 | `-l, --list` | Target list (default: system default list) |
-| `-d, --due` | Due date (natural language or standard format) |
+| `-d, --due` | Due date (natural language or standard format); a date with no time is all-day |
+| `--all-day` | Make the due date all-day, e.g. `--due friday --all-day` |
 | `-p, --priority` | Priority: `high`, `medium`, `low`, `none` |
 | `-n, --notes` | Notes/body text |
 | `-u, --url` | URL (shows in Reminders.app URL field) |
@@ -102,7 +105,7 @@ rem show 6ECE
 
 **Aliases:** `get`
 
-Pass the full ID, UUID, or any unique prefix. IDs are case-insensitive and prefix-matched.
+Pass the full ID, UUID, or any unique prefix. IDs are case-insensitive and prefix-matched. A prefix that matches more than one reminder is an error listing the matches, in every command; rem never guesses.
 
 ### `rem update`
 
@@ -132,7 +135,8 @@ rem update 6ECE --location none                             # clear geofence onl
 |------|-------------|
 | `-t, --title` | New title |
 | `-l, --list` | Move reminder to a different list |
-| `-d, --due` | New due date |
+| `-d, --due` | New due date; an all-day reminder stays all-day unless the new value has a time |
+| `--all-day` | Make the due date all-day; alone, converts the current due date |
 | `-p, --priority` | New priority |
 | `-n, --notes` | New notes |
 | `-u, --url` | New URL (empty string to clear) |

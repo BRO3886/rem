@@ -182,17 +182,18 @@ func runAddInteractive() error {
 	}
 
 	if dueStr != "" {
-		dueDate, err := parseDate(dueStr)
+		dueDate, allDay, err := parseDue(dueStr, false, false)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: could not parse due date '%s': %v\n", dueStr, err)
 		} else {
 			r.DueDate = &dueDate
+			r.AllDay = allDay
 		}
 	}
 	// Interactive mode has no --silent/--remind-me equivalents yet, so the
-	// default "alarm at due time" behavior always applies when a due date was
-	// entered. Uses the same helper as the non-interactive path.
-	alarms, err := buildAlarms(r.DueDate != nil, "", false)
+	// default "alarm at due time" behavior always applies when a timed due
+	// date was entered. Uses the same helper as the non-interactive path.
+	alarms, err := buildAlarms(r.DueDate != nil && !r.AllDay, "", false)
 	if err != nil {
 		return err
 	}

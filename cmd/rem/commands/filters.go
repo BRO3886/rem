@@ -14,11 +14,80 @@ import (
 // parseDate wraps dateparser.ParseDate with rem's default options:
 // bare dates at 9am, past times roll to tomorrow, eow skips today.
 func parseDate(input string) (time.Time, error) {
-	return dateparser.ParseDate(input,
-		dateparser.WithDefaultHour(9),
+	return parseDateAt(input, time.Now(), 9)
+}
+
+func parseDateAt(input string, now time.Time, defaultHour int) (time.Time, error) {
+	return dateparser.ParseDateRelativeTo(input, now,
+		dateparser.WithDefaultHour(defaultHour),
 		dateparser.WithSmartTimeRollover(),
 		dateparser.WithEOWSkipToday(),
 	)
+}
+
+// calendarDateLayouts are the date-only formats dateparser accepts. A due
+// date written this way has no time of day, so it is saved as all-day.
+var calendarDateLayouts = []string{
+	"2006-01-02",
+	"01/02/2006",
+	"Jan 2, 2006",
+	"January 2, 2006",
+	"2 Jan 2006",
+	"02 Jan 2006",
+}
+
+func isCalendarDate(input string) bool {
+	s := strings.TrimSpace(input)
+	for _, layout := range calendarDateLayouts {
+		if _, err := time.Parse(layout, s); err == nil {
+			return true
+		}
+	}
+	return false
+}
+
+// parseDue parses a --due value and decides whether it is all-day.
+// See parseDueAt.
+func parseDue(input string, forceAllDay, preferAllDay bool) (time.Time, bool, error) {
+	return parseDueAt(input, time.Now(), forceAllDay, preferAllDay)
+}
+
+// parseDueAt parses a --due value relative to now and reports whether it
+// should be saved as an all-day due date (calendar date only, no time):
+//
+//   - A calendar date with no time ("2026-09-30") is all-day. It used to be
+//     saved as a timed reminder at 00:00, which Reminders.app shows as
+//     overdue for the whole day.
+//   - A natural-language day with no time ("tomorrow", "friday") keeps the
+//     9am default, unless forceAllDay (--all-day) is set, or preferAllDay is
+//     set because the reminder being updated is already all-day.
+//   - Any explicit time ("tomorrow at 2pm", "in 2 hours",
+//     "2026-09-30T00:00:00") is timed; combining one with --all-day is an
+//     error.
+//
+// All-day results are midnight local time on the due date.
+func parseDueAt(input string, now time.Time, forceAllDay, preferAllDay bool) (time.Time, bool, error) {
+	t, err := parseDateAt(input, now, 9)
+	if err != nil {
+		return time.Time{}, false, err
+	}
+
+	calendarDate := isCalendarDate(input)
+	hasTime := false
+	if !calendarDate {
+		// A bare day takes the default hour; an explicit time doesn't. So
+		// if changing the default hour changes the result, there was no time.
+		alt, err := parseDateAt(input, now, 13)
+		hasTime = err == nil && alt.Equal(t)
+	}
+
+	if forceAllDay && hasTime {
+		return time.Time{}, false, fmt.Errorf("--all-day can't be used with a time of day: %q", input)
+	}
+	if forceAllDay || calendarDate || (preferAllDay && !hasTime) {
+		return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()), true, nil
+	}
+	return t, false, nil
 }
 
 // parseAlarm parses an alarm specification. Supports:
@@ -47,9 +116,11 @@ func parseAlarm(input string) (reminder.Alarm, error) {
 //
 //  1. If --remind-me is explicitly set, always use that alarm (overrides
 //     --silent; an explicit request from the user wins).
-//  2. Else if --due is set AND --silent is not, attach a zero-offset alarm
-//     (fire at the due time). This matches Apple Reminders.app's default
-//     behavior when you create a reminder with a date in the UI.
+//  2. Else if --due is set with a time of day AND --silent is not, attach a
+//     zero-offset alarm (fire at the due time). This matches Apple
+//     Reminders.app's default behavior when you create a reminder with a
+//     date in the UI. Callers pass hasDueDate=false for an all-day due,
+//     which has no time to fire at (it would fire at midnight).
 //  3. Otherwise, no alarms.
 //
 // Extracted from the RunE closure in add.go so the decision logic is unit
@@ -66,6 +137,23 @@ func buildAlarms(hasDueDate bool, remindMe string, silent bool) ([]reminder.Alar
 		return []reminder.Alarm{{RelativeOffset: 0}}, nil
 	}
 	return nil, nil
+}
+
+// dropDueTimeAlarms removes "at the due time" alarms (zero relative offset,
+// the kind buildAlarms adds by default) and reports whether it removed any.
+// Used when a timed due becomes all-day: with no time of day, such an alarm
+// would fire at midnight. Offset, absolute, and location alarms are kept.
+func dropDueTimeAlarms(alarms []reminder.Alarm) ([]reminder.Alarm, bool) {
+	var kept []reminder.Alarm
+	dropped := false
+	for _, a := range alarms {
+		if a.RelativeOffset == 0 && a.AbsoluteDate == nil && a.Location == nil {
+			dropped = true
+			continue
+		}
+		kept = append(kept, a)
+	}
+	return kept, dropped
 }
 
 // parseLocationAlarm builds a geofence alarm from the --location, --radius,

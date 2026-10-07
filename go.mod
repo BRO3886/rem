@@ -47,3 +47,5 @@ require (
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 )
+
+replace github.com/BRO3886/go-eventkit => github.com/justincampbell/go-eventkit v0.15.1-0.20261007201127-ba99ad106960

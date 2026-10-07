@@ -131,7 +131,7 @@ func printRemindersTable(w io.Writer, reminders []*reminder.Reminder) {
 		id := shortID(r.ID)
 		dueStr := ""
 		if r.DueDate != nil {
-			dueStr = r.DueDate.Local().Format("Jan 02, 15:04")
+			dueStr = formatDue(r, "Jan 02", "Jan 02, 15:04")
 		}
 		priority := r.Priority.String()
 		status := statusString(r)
@@ -146,7 +146,7 @@ func printRemindersPlain(w io.Writer, reminders []*reminder.Reminder) {
 	for _, r := range reminders {
 		dueStr := ""
 		if r.DueDate != nil {
-			dueStr = " (due: " + r.DueDate.Local().Format("2006-01-02 15:04") + ")"
+			dueStr = " (due: " + formatDue(r, "2006-01-02", "2006-01-02 15:04") + ")"
 		}
 		statusMark := "[ ]"
 		if r.Completed {
@@ -170,6 +170,9 @@ func printReminderRichDetail(w io.Writer, r *reminder.Reminder) {
 	fmt.Fprintf(w, "%s %s\n", bold("Name:"), r.Name)
 	fmt.Fprintf(w, "%s %s\n", bold("ID:"), r.ID)
 	fmt.Fprintf(w, "%s %s\n", bold("List:"), cyan(r.ListName))
+	if r.ParentID != "" {
+		fmt.Fprintf(w, "%s subtask of %s\n", bold("Parent:"), r.ParentID)
+	}
 
 	if r.Body != "" {
 		fmt.Fprintf(w, "%s %s\n", bold("Notes:"), r.Body)
@@ -181,7 +184,7 @@ func printReminderRichDetail(w io.Writer, r *reminder.Reminder) {
 		fmt.Fprintf(w, "%s %s\n", bold("Tags:"), cyan("#"+strings.Join(r.Tags, " #")))
 	}
 	if r.DueDate != nil {
-		fmt.Fprintf(w, "%s %s\n", bold("Due:"), r.DueDate.Local().Format("Mon Jan 02, 2006 at 3:04 PM"))
+		fmt.Fprintf(w, "%s %s\n", bold("Due:"), formatDue(r, "Mon Jan 02, 2006 (all day)", "Mon Jan 02, 2006 at 3:04 PM"))
 	}
 	if r.RemindMeDate != nil {
 		fmt.Fprintf(w, "%s %s\n", bold("Remind:"), r.RemindMeDate.Local().Format("Mon Jan 02, 2006 at 3:04 PM"))
@@ -236,6 +239,9 @@ func printReminderPlainDetail(w io.Writer, r *reminder.Reminder) {
 	fmt.Fprintf(w, "Name: %s\n", r.Name)
 	fmt.Fprintf(w, "ID: %s\n", r.ID)
 	fmt.Fprintf(w, "List: %s\n", r.ListName)
+	if r.ParentID != "" {
+		fmt.Fprintf(w, "Parent: subtask of %s\n", r.ParentID)
+	}
 	if r.Body != "" {
 		fmt.Fprintf(w, "Notes: %s\n", r.Body)
 	}
@@ -246,7 +252,7 @@ func printReminderPlainDetail(w io.Writer, r *reminder.Reminder) {
 		fmt.Fprintf(w, "Tags: #%s\n", strings.Join(r.Tags, " #"))
 	}
 	if r.DueDate != nil {
-		fmt.Fprintf(w, "Due: %s\n", r.DueDate.Local().Format("2006-01-02 15:04"))
+		fmt.Fprintf(w, "Due: %s\n", formatDue(r, "2006-01-02", "2006-01-02 15:04"))
 	}
 	fmt.Fprintf(w, "Priority: %s\n", r.Priority.String())
 	if r.Completed {
@@ -307,6 +313,15 @@ func shortID(id string) string {
 		return s[:8]
 	}
 	return s
+}
+
+// formatDue formats a due date with timedLayout, or with dateLayout (no time
+// of day) when the reminder is all-day.
+func formatDue(r *reminder.Reminder, dateLayout, timedLayout string) string {
+	if r.AllDay {
+		return r.DueDate.Local().Format(dateLayout)
+	}
+	return r.DueDate.Local().Format(timedLayout)
 }
 
 func statusString(r *reminder.Reminder) string {

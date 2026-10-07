@@ -44,7 +44,9 @@ rem add "Take out trash" --location "37.3318,-122.0312" --on-leave
 
 **Aliases:** `create`, `new`
 
-**Notifications.** When `--due` is set, rem auto-attaches an alarm at the due time so the system actually fires a notification — matching Apple Reminders.app default behavior. Use `--remind-me` to override the timing (e.g. `15m` for 15 minutes before), or `--silent` to suppress the auto-alarm entirely.
+**All-day due dates.** A calendar date with no time (`--due 2026-03-01`) is saved as a true all-day reminder: no time of day, and not overdue until the day is over. Natural-language days (`tomorrow`, `friday`) default to 9 AM; add `--all-day` to make them all-day. All-day dues get no auto-alarm.
+
+**Notifications.** When `--due` is set with a time of day, rem auto-attaches an alarm at the due time so the system actually fires a notification — matching Apple Reminders.app default behavior. Use `--remind-me` to override the timing (e.g. `15m` for 15 minutes before), or `--silent` to suppress the auto-alarm entirely.
 
 **URLs.** `--url` writes to the real Reminders.app URL field (not the notes body), so URLs show up with Apple's native link card rendering in the Reminders.app UI.
 
@@ -55,7 +57,8 @@ rem add "Take out trash" --location "37.3318,-122.0312" --on-leave
 | Flag | Description |
 |------|-------------|
 | `-l, --list` | Target list (default: system default list) |
-| `-d, --due` | Due date (natural language or standard format) |
+| `-d, --due` | Due date (natural language or standard format); a date with no time is all-day |
+| `--all-day` | Make the due date all-day, e.g. `--due friday --all-day` |
 | `-p, --priority` | Priority: `high`, `medium`, `low`, `none` |
 | `-n, --notes` | Notes/body text |
 | `-u, --url` | URL (shows in Reminders.app URL field) |
@@ -102,7 +105,7 @@ rem show 6ECE
 
 **Aliases:** `get`
 
-Pass the full ID, UUID, or any unique prefix. IDs are case-insensitive and prefix-matched.
+Pass the full ID, UUID, or any unique prefix. IDs are case-insensitive and prefix-matched. A prefix that matches more than one reminder is an error listing the matches, in every command; rem never guesses.
 
 ### `rem update`
 
@@ -116,6 +119,8 @@ rem update 6ECE --add-tags "work,urgent"    # add tags
 rem update 6ECE --remove-tags "urgent"      # remove tags
 rem update 6ECE --location "37.3318,-122.0312" --on-leave   # set/replace geofence
 rem update 6ECE --location none                             # clear geofence only
+rem update 6ECE --parent 9F21    # make it a subtask of 9F21
+rem update 6ECE --parent none    # make it top-level again
 ```
 
 **Aliases:** `edit`
@@ -126,13 +131,17 @@ rem update 6ECE --location none                             # clear geofence onl
 
 `--remind-me` and `--location` manage separate alarm buckets: `--remind-me` replaces only time-based alarms, `--location` replaces only the geofence. `--remind-me none` clears time alarms but keeps the geofence; `--location none` does the reverse.
 
+`--parent` nests the reminder as a subtask, as Reminders.app's indent does (via the private ReminderKit API; public EventKit has no subtasks). Reminders allows one level, so the parent must be top-level and in the same list, and the reminder must not have subtasks of its own. `--parent none` outdents it. Subtasks carry `parent_id` in JSON output. `--parent` can't be combined with `--list`.
+
 `--list` moves the reminder. Plain moves are native and keep the reminder's ID. Moving to or from a **shared list** is different: macOS has no true move across that boundary (Apple's own apps copy and delete behind the scenes), so rem copies the reminder — all fields preserved, including completed state — deletes the original, and prints a warning with the **new ID** on stderr. Because the ID changes, rem **asks for confirmation** before a shared-list move; pass `--force`/`-f` to skip the prompt (required in scripts — non-interactive runs refuse without it, same as `rem delete`). Re-resolve the ID after such a move.
 
 | Flag | Description |
 |------|-------------|
 | `-t, --title` | New title |
 | `-l, --list` | Move reminder to a different list |
-| `-d, --due` | New due date |
+| `--parent` | Make it a subtask of this reminder (same list), `none` to make it top-level |
+| `-d, --due` | New due date; an all-day reminder stays all-day unless the new value has a time |
+| `--all-day` | Make the due date all-day; alone, converts the current due date |
 | `-p, --priority` | New priority |
 | `-n, --notes` | New notes |
 | `-u, --url` | New URL (empty string to clear) |

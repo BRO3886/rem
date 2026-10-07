@@ -60,6 +60,7 @@ Do NOT use rem for:
 | "flag / unflag X" | `rem flag <short-id>...` or `rem unflag <short-id>...` (supports multiple IDs) |
 | "show me flagged stuff" | `rem list --flagged` |
 | "move X to list Y" | `rem update <short-id> --list "Y"` (if Y or source is shared: confirm with user first, then `-f` — see gotchas) |
+| "make X a subtask of Y" / "nest X under Y" | `rem update <X-id> --parent <Y-id>` (same list; `--parent none` to un-nest) — see subtasks section |
 | "change priority to high" | `rem update <short-id> --priority high` |
 | "add notes to X" | `rem update <short-id> --notes "..."` |
 | "tag this as work" / "add tags" | `rem add "Task #work"` or `rem update <short-id> --add-tags "work,urgent"` |
@@ -95,11 +96,33 @@ rem list --incomplete --list Work -o json
 
 ## Short IDs
 
-rem displays the first 8 characters of each reminder's UUID as its "short ID" (e.g. `AB12CD34`). You can pass any unique prefix to commands — `rem complete AB1` works as long as it matches exactly one reminder. Prefer short IDs when showing reminder IDs back to the user.
+rem displays the first 8 characters of each reminder's UUID as its "short ID" (e.g. `AB12CD34`). You can pass any unique prefix to commands — `rem complete AB1` works as long as it matches exactly one reminder. A prefix that matches more than one reminder (in any list, completed or not) is an error that lists the matches with their full IDs; rem never picks one. Prefer short IDs when showing reminder IDs back to the user, and use a longer prefix or the full ID if one comes back ambiguous.
+
+## All-day due dates
+
+A due date with no time of day is saved as a true all-day reminder (Reminders.app shows it without a time and doesn't mark it overdue until the day is over). All-day dues get no auto-alarm.
+
+- `rem add "Pay rent" --due 2026-03-01` → all-day (a calendar date with no time is all-day)
+- `rem add "Pack" --due friday --all-day` → all-day. Without `--all-day`, natural-language days like `friday` or `tomorrow` default to 9 AM
+- `rem update AB12 --all-day` → turns the current due date into an all-day one on the same date
+- `rem update AB12 --due monday` on an all-day reminder keeps it all-day; give a time (`--due "monday 2pm"`) to make it timed
+- JSON output marks all-day reminders with `"due_all_day": true`. That reflects how Reminders.app displays the reminder, so a reminder the app shows at 12:00 AM (and overdue) reads as timed even if another tool marked it all-day.
+- To repair a reminder the app shows at 12:00 AM when it should be all-day, run `rem update <id> --all-day`. It keeps the date and removes the midnight "at due time" alarm.
+
+## Subtasks
+
+Reminders.app subtasks (one reminder indented under another) are read and written through a private ReminderKit API, since public EventKit has none.
+
+- `rem update <child-id> --parent <parent-id>` nests the child under the parent. Running it again is a no-op; pointing at a different parent re-parents directly.
+- `rem update <child-id> --parent none` makes it top-level again, in the same list.
+- JSON output (`rem show`, `rem list`, etc.) has `"parent_id": "<full parent ID>"` on subtasks and omits it on top-level reminders. `rem show` prints a `Parent:` line.
+- Reminders allows one level, so rem refuses to nest under a reminder that is itself a subtask, or to nest a reminder that has subtasks of its own. The parent must be in the same list. `--parent` can't be combined with `--list`: move first, then nest.
+- Open and completed reminders can both be nested.
+- To check that a build supports this, look for `--parent` in `rem update --help`.
 
 ## Notifications default to ON
 
-When `--due` is set on `rem add`, rem auto-attaches an alarm at the due time. This matches Apple Reminders.app behavior. **Do NOT pass `--remind-me 0m` to enable notifications — that's already the default when `--due` is set.**
+When `--due` is set with a time of day on `rem add`, rem auto-attaches an alarm at the due time (all-day dues get none). This matches Apple Reminders.app behavior. **Do NOT pass `--remind-me 0m` to enable notifications — that's already the default when `--due` is set.**
 
 - `rem add "Review PR" --due tomorrow` → notifies at tomorrow 9 AM (default due time)
 - `rem add "Review PR" --due "tomorrow 2pm" --remind-me 15m` → notifies 15 minutes before

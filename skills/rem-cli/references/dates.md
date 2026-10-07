@@ -2,6 +2,17 @@
 
 The `--due` flag on `rem add` and `rem update` accepts natural language dates. Powered by [`go-eventkit/dateparser`](https://github.com/BRO3886/go-eventkit).
 
+## All-day vs. timed `--due`
+
+| Input | Saved as |
+|-------|----------|
+| A calendar date with no time: `2026-03-01`, `03/01/2026`, `Mar 1, 2026` | All-day on that date |
+| A day with no time: `tomorrow`, `friday` | 9:00 AM that day (all-day with `--all-day`) |
+| Anything with a time: `tomorrow 2pm`, `in 2 hours`, `2026-03-01 14:00` | Timed (`--all-day` with a time is an error) |
+| `2026-03-01T00:00:00` | Timed at midnight (the explicit way to get midnight) |
+
+`rem update --due` keeps an all-day reminder all-day unless the new value has a time.
+
 ## Keywords
 
 | Input | Resolves to |

@@ -13,6 +13,7 @@ import (
 var (
 	addList        string
 	addDue         string
+	addAllDay      bool
 	addPriority    string
 	addNotes       string
 	addURL         string
@@ -37,6 +38,8 @@ var addCmd = &cobra.Command{
   rem add "Review PR" --due "next friday at 2pm" --url https://github.com/org/repo/pull/123
   rem add "Call dentist" --due "in 2 days" --notes "Ask about cleaning"
   rem add "Meeting" --due "tomorrow at 10am" --remind-me 15m
+  rem add "Pay rent" --due 2026-03-01                  # all-day
+  rem add "Pack" --due friday --all-day
   rem add "Standup" --due "monday 9am" --repeat "weekly on mon,wed,fri"
   rem add "Buy milk" --location "37.3318,-122.0312" --radius 200
   rem add "Take out trash" --location "37.3318,-122.0312" --on-leave
@@ -60,15 +63,21 @@ var addCmd = &cobra.Command{
 			Priority: reminder.ParsePriority(addPriority),
 		}
 
+		if addAllDay && addDue == "" {
+			return fmt.Errorf("--all-day needs a due date: pass --due too")
+		}
 		if addDue != "" {
-			dueDate, err := parseDate(addDue)
+			dueDate, allDay, err := parseDue(addDue, addAllDay, false)
 			if err != nil {
 				return fmt.Errorf("invalid due date: %w", err)
 			}
 			r.DueDate = &dueDate
+			r.AllDay = allDay
 		}
 
-		alarms, err := buildAlarms(r.DueDate != nil, addRemindMe, addSilent)
+		// An all-day due has no time to alarm at, so it gets no default alarm
+		// (Reminders.app does the same).
+		alarms, err := buildAlarms(r.DueDate != nil && !r.AllDay, addRemindMe, addSilent)
 		if err != nil {
 			return err
 		}
@@ -111,7 +120,8 @@ var addCmd = &cobra.Command{
 
 func init() {
 	addCmd.Flags().StringVarP(&addList, "list", "l", "", "Reminder list name (default: system default list)")
-	addCmd.Flags().StringVarP(&addDue, "due", "d", "", "Due date (e.g., 'tomorrow', 'next friday at 2pm', '2026-02-15')")
+	addCmd.Flags().StringVarP(&addDue, "due", "d", "", "Due date (e.g., 'tomorrow', 'next friday at 2pm', '2026-02-15'); a date without a time ('2026-02-15') is all-day")
+	addCmd.Flags().BoolVar(&addAllDay, "all-day", false, "Make the due date all-day (no time of day), e.g. --due tomorrow --all-day")
 	addCmd.Flags().StringVarP(&addPriority, "priority", "p", "", "Priority: high, medium, low, or none")
 	addCmd.Flags().StringVarP(&addNotes, "notes", "n", "", "Notes/body for the reminder")
 	addCmd.Flags().StringVarP(&addURL, "url", "u", "", "URL to attach to the reminder")

@@ -2,6 +2,8 @@ module github.com/BRO3886/rem
 
 go 1.24.5
 
+toolchain go1.26.10
+
 require (
 	github.com/BRO3886/go-eventkit v0.13.0
 	github.com/charmbracelet/huh v0.8.0

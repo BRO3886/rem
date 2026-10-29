@@ -20,6 +20,8 @@ var (
 	addTags        string
 	addRemindMe    string
 	addRepeat      string
+	addRepeatUntil string
+	addRepeatCount int
 	addInteractive bool
 	addSilent      bool
 	addLocation    string
@@ -38,6 +40,8 @@ var addCmd = &cobra.Command{
   rem add "Call dentist" --due "in 2 days" --notes "Ask about cleaning"
   rem add "Meeting" --due "tomorrow at 10am" --remind-me 15m
   rem add "Standup" --due "monday 9am" --repeat "weekly on mon,wed,fri"
+  rem add "Ointment" --due "tomorrow 11am" --repeat daily --repeat-until "2026-10-10"
+  rem add "Pills" --due "tomorrow 9am" --repeat daily --repeat-count 7
   rem add "Buy milk" --location "37.3318,-122.0312" --radius 200
   rem add "Take out trash" --location "37.3318,-122.0312" --on-leave
   rem add -i  # Interactive mode`,
@@ -85,8 +89,15 @@ var addCmd = &cobra.Command{
 			r.Alarms = append(r.Alarms, locAlarm)
 		}
 
+		if addRepeat == "" && recurrenceEndChanged(cmd) {
+			return fmt.Errorf("--repeat-until and --repeat-count require --repeat")
+		}
 		if addRepeat != "" {
 			rule, err := parseRecurrence(addRepeat)
+			if err != nil {
+				return err
+			}
+			rule.End, err = recurrenceEndFromFlags(cmd, addRepeatUntil, addRepeatCount)
 			if err != nil {
 				return err
 			}
@@ -119,6 +130,9 @@ func init() {
 	addCmd.Flags().StringVarP(&addTags, "tags", "t", "", "Comma-separated native tags")
 	addCmd.Flags().StringVarP(&addRemindMe, "remind-me", "r", "", "Set alarm: duration before due (15m, 1h, 2d) or absolute time")
 	addCmd.Flags().StringVar(&addRepeat, "repeat", "", "Set recurrence: daily, weekly, 'weekly on mon,wed,fri', monthly, yearly")
+	addCmd.Flags().StringVar(&addRepeatUntil, "repeat-until", "", "Stop repeating after this date, inclusive (e.g., '2026-10-10', 'next friday')")
+	addCmd.Flags().IntVar(&addRepeatCount, "repeat-count", 0, "Stop repeating after this many occurrences")
+	addCmd.MarkFlagsMutuallyExclusive("repeat-until", "repeat-count")
 	addCmd.Flags().BoolVar(&addSilent, "silent", false, "Don't auto-attach an alarm when --due is set")
 	addCmd.Flags().StringVar(&addLocation, "location", "", "Geofence trigger coordinates: \"lat,lng\" (e.g. \"37.3318,-122.0312\")")
 	addCmd.Flags().Float64Var(&addRadius, "radius", 0, "Geofence radius in meters (default: system minimum)")

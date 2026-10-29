@@ -130,9 +130,27 @@ const (
 type RecurrenceRule struct {
 	Frequency      RecurrenceFrequency
 	Interval       int
-	DaysOfWeek     []string // e.g., ["Mon", "Wed", "Fri"] — display names
-	DaysOfWeekNums []int    // eventkit weekday numbers (1=Sun..7=Sat) — for creation
-	DaysOfMonth    []int    // e.g., [1, 15] — for monthly rules
+	DaysOfWeek     []string       // e.g., ["Mon", "Wed", "Fri"] — display names
+	DaysOfWeekNums []int          // eventkit weekday numbers (1=Sun..7=Sat) — for creation
+	DaysOfMonth    []int          // e.g., [1, 15] — for monthly rules
+	End            *RecurrenceEnd // nil = repeats forever
+}
+
+// RecurrenceEnd defines when a recurrence stops.
+// Exactly one of EndDate or OccurrenceCount is set.
+type RecurrenceEnd struct {
+	EndDate         *time.Time
+	OccurrenceCount int
+}
+
+func (e RecurrenceEnd) String() string {
+	if e.EndDate != nil {
+		return "until " + e.EndDate.Local().Format("Mon Jan 02, 2006")
+	}
+	if e.OccurrenceCount == 1 {
+		return "1 time"
+	}
+	return fmt.Sprintf("%d times", e.OccurrenceCount)
 }
 
 // FormatRecurrence returns a human-readable recurrence description.
@@ -172,6 +190,9 @@ func (r RecurrenceRule) String() string {
 			days[i] = fmt.Sprintf("%d", d)
 		}
 		freq += " on day " + strings.Join(days, ", ")
+	}
+	if r.End != nil {
+		freq += ", " + r.End.String()
 	}
 	return freq
 }

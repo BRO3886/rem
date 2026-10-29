@@ -21,6 +21,8 @@ var (
 	updateList           string
 	updateRemindMe       string
 	updateRepeat         string
+	updateRepeatUntil    string
+	updateRepeatCount    int
 	updateInteractive    bool
 	updateForce          bool
 	updateLocation       string
@@ -41,6 +43,9 @@ var updateCmd = &cobra.Command{
   rem update abc12345 --remind-me 15m
   rem update abc12345 --repeat "weekly on mon,fri"
   rem update abc12345 --repeat none
+  rem update abc12345 --repeat-until "2026-10-10"
+  rem update abc12345 --repeat-count 7
+  rem update abc12345 --repeat-until none
   rem update abc12345 --location "37.3318,-122.0312" --on-leave
   rem update abc12345 --location none
   rem update -i
@@ -143,16 +148,32 @@ var updateCmd = &cobra.Command{
 				updates["alarms"] = combined
 			}
 		}
+		// --repeat replaces the whole rule (with the end flags applied to it);
+		// the end flags alone change only the end of the existing rule.
+		repeatEndChanged := recurrenceEndChanged(cmd)
 		if cmd.Flags().Changed("repeat") {
 			if updateRepeat == "" || updateRepeat == "none" {
+				if repeatEndChanged {
+					return fmt.Errorf("--repeat-until and --repeat-count cannot be combined with --repeat none")
+				}
 				updates["recurrence"] = nil
 			} else {
 				rule, err := parseRecurrence(updateRepeat)
 				if err != nil {
 					return err
 				}
+				rule.End, err = recurrenceEndFromFlags(cmd, updateRepeatUntil, updateRepeatCount)
+				if err != nil {
+					return err
+				}
 				updates["recurrence"] = []reminder.RecurrenceRule{rule}
 			}
+		} else if repeatEndChanged {
+			end, err := recurrenceEndFromFlags(cmd, updateRepeatUntil, updateRepeatCount)
+			if err != nil {
+				return err
+			}
+			updates["recurrence_end"] = end
 		}
 
 		if len(updates) == 0 {
@@ -189,6 +210,9 @@ func init() {
 	updateCmd.Flags().BoolVar(&updateOnArrive, "on-arrive", false, "Fire the location alarm on arrival (default with --location)")
 	updateCmd.Flags().BoolVar(&updateOnLeave, "on-leave", false, "Fire the location alarm on departure")
 	updateCmd.Flags().StringVar(&updateRepeat, "repeat", "", "Set recurrence: daily, weekly, 'weekly on mon,wed,fri', 'none' to clear")
+	updateCmd.Flags().StringVar(&updateRepeatUntil, "repeat-until", "", "Stop repeating after this date, inclusive; 'none' to repeat forever")
+	updateCmd.Flags().IntVar(&updateRepeatCount, "repeat-count", 0, "Stop repeating after this many occurrences")
+	updateCmd.MarkFlagsMutuallyExclusive("repeat-until", "repeat-count")
 	updateCmd.Flags().BoolVarP(&updateInteractive, "interactive", "i", false, "Update interactively")
 	updateCmd.Flags().BoolVarP(&updateForce, "force", "f", false, "Skip the shared-list move confirmation")
 	updateCmd.Flags().BoolVarP(&updateForce, "yes", "y", false, "Skip the shared-list move confirmation (alias for --force)")

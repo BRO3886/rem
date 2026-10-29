@@ -112,7 +112,7 @@ rem stats
 
 ```bash
 # Create
-rem add "Title" [--list LIST] [--due DATE] [--priority high|medium|low] [--notes TEXT] [--url URL] [-F/--flagged] [-t/--tags TAGS] [-r/--remind-me DURATION] [--repeat PATTERN] [--location "LAT,LNG"] [--radius METERS] [--on-arrive|--on-leave]
+rem add "Title" [--list LIST] [--due DATE] [--priority high|medium|low] [--notes TEXT] [--url URL] [-F/--flagged] [-t/--tags TAGS] [-r/--remind-me DURATION] [--repeat PATTERN] [--repeat-until DATE|--repeat-count N] [--location "LAT,LNG"] [--radius METERS] [--on-arrive|--on-leave]
 rem add -i                          # Interactive creation
 
 # List
@@ -124,7 +124,7 @@ rem show <id>                       # Full or partial ID
 rem get <id> -o json
 
 # Update
-rem update <id> [-t/--title TEXT] [--due DATE] [--priority LEVEL] [--notes TEXT] [--url URL] [--add-tags TAGS] [--remove-tags TAGS] [-r/--remind-me DURATION] [--repeat PATTERN] [--list LIST] [--location "LAT,LNG"|none] [--radius METERS] [--on-arrive|--on-leave]
+rem update <id> [-t/--title TEXT] [--due DATE] [--priority LEVEL] [--notes TEXT] [--url URL] [--add-tags TAGS] [--remove-tags TAGS] [-r/--remind-me DURATION] [--repeat PATTERN] [--repeat-until DATE|none|--repeat-count N] [--list LIST] [--location "LAT,LNG"|none] [--radius METERS] [--on-arrive|--on-leave]
 
 # Complete / Uncomplete (support multiple IDs)
 rem complete <id> [id2 id3...]

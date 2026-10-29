@@ -263,6 +263,12 @@ func (s *ReminderService) UpdateReminder(id string, updates map[string]any) erro
 				}
 				input.RecurrenceRules = &ekRules
 			}
+		case "recurrence_end":
+			ekRules, err := s.recurrenceRulesWithEnd(id, value.(*reminder.RecurrenceEnd))
+			if err != nil {
+				return err
+			}
+			input.RecurrenceRules = &ekRules
 		}
 	}
 
@@ -429,6 +435,12 @@ func toEventKitAlarm(a reminder.Alarm) reminders.Alarm {
 
 // toEventKitRecurrenceRule converts a domain RecurrenceRule to an eventkit RecurrenceRule.
 func toEventKitRecurrenceRule(rr reminder.RecurrenceRule) eventkit.RecurrenceRule {
+	rule := toEventKitRecurrencePattern(rr)
+	rule.End = toEventKitRecurrenceEnd(rr.End)
+	return rule
+}
+
+func toEventKitRecurrencePattern(rr reminder.RecurrenceRule) eventkit.RecurrenceRule {
 	switch rr.Frequency {
 	case reminder.FrequencyDaily:
 		return eventkit.Daily(rr.Interval)
@@ -445,6 +457,40 @@ func toEventKitRecurrenceRule(rr reminder.RecurrenceRule) eventkit.RecurrenceRul
 	default:
 		return eventkit.Daily(1)
 	}
+}
+
+func toEventKitRecurrenceEnd(end *reminder.RecurrenceEnd) *eventkit.RecurrenceEnd {
+	if end == nil {
+		return nil
+	}
+	return &eventkit.RecurrenceEnd{EndDate: end.EndDate, OccurrenceCount: end.OccurrenceCount}
+}
+
+func fromEventKitRecurrenceEnd(end *eventkit.RecurrenceEnd) *reminder.RecurrenceEnd {
+	if end == nil {
+		return nil
+	}
+	return &reminder.RecurrenceEnd{EndDate: end.EndDate, OccurrenceCount: end.OccurrenceCount}
+}
+
+// recurrenceRulesWithEnd returns the reminder's current EventKit recurrence
+// rules with only their end replaced. Working on the raw rules (instead of a
+// domain round-trip) keeps fields rem doesn't model, such as months of the
+// year or set positions set in Reminders.app.
+func (s *ReminderService) recurrenceRulesWithEnd(id string, end *reminder.RecurrenceEnd) ([]eventkit.RecurrenceRule, error) {
+	current, err := s.client.Reminder(id)
+	if err != nil {
+		return nil, fmt.Errorf("reminder not found: %s", id)
+	}
+	if len(current.RecurrenceRules) == 0 {
+		return nil, fmt.Errorf("reminder does not repeat — set --repeat to add a recurrence")
+	}
+	rules := make([]eventkit.RecurrenceRule, len(current.RecurrenceRules))
+	for i, rule := range current.RecurrenceRules {
+		rule.End = toEventKitRecurrenceEnd(end)
+		rules[i] = rule
+	}
+	return rules, nil
 }
 
 // fromEventKitReminder converts a go-eventkit Reminder to an internal Reminder.
@@ -474,6 +520,7 @@ func fromEventKitReminder(r *reminders.Reminder) *reminder.Reminder {
 			Frequency:   reminder.RecurrenceFrequency(rule.Frequency),
 			Interval:    rule.Interval,
 			DaysOfMonth: rule.DaysOfTheMonth,
+			End:         fromEventKitRecurrenceEnd(rule.End),
 		}
 		for _, dow := range rule.DaysOfTheWeek {
 			rr.DaysOfWeek = append(rr.DaysOfWeek, dow.DayOfTheWeek.String())

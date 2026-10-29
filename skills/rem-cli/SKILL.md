@@ -65,6 +65,7 @@ Do NOT use rem for:
 | "tag this as work" / "add tags" | `rem add "Task #work"` or `rem update <short-id> --add-tags "work,urgent"` |
 | "remove the urgent tag" | `rem update <short-id> --remove-tags "urgent"` |
 | "make it repeat weekly / monthly" | `rem add ... --repeat weekly` or `--repeat "weekly on mon,wed,fri"` |
+| "every day for a week" / "until X" | `rem add ... --repeat daily --repeat-until "2026-10-10"` or `--repeat-count 7`; on an existing reminder `rem update <short-id> --repeat-until ...` |
 | "remind me when I get to / leave X" | `rem add "..." --location "lat,lng"` (+ `--on-leave` for departure) — see location section |
 | "clear the due date on X" | `rem update <short-id> --due none` |
 | "what lists do I have" | `rem lists` (add `--count` for per-list totals) |
@@ -136,7 +137,7 @@ rem update AB12 --url ""    # clear
 
 1. **macOS only.** rem uses EventKit via cgo. Will fail on Linux — detect OS first if you're unsure.
 2. **Priority uses word forms, not raw numbers.** Pass `--priority high|medium|low|none`. rem does accept raw ints, but Apple's 1–9 scale is inverted (1 = highest, 9 = lowest), so the words are safer when relaying from user input.
-3. **`--due none` clears** the due date in `rem update`. Same for `--remind-me none` and `--repeat none`.
+3. **`--due none` clears** the due date in `rem update`. Same for `--remind-me none`, `--repeat none`, and `--repeat-until none` (removes only the end).
 4. **Flagged and tags use private API.** Both go through Apple's private ReminderKit framework since EventKit doesn't expose these properties. Sub-200ms like everything else, but may break on future macOS versions. Both degrade gracefully — if the private API is unavailable, the reminder is still created/updated (just without the flag/tags) and a warning is printed on stderr. This applies to `flag`/`unflag` too, which behave exactly like `update --flagged`.
 5. **Tags from title are additive.** `#hashtags` in the title are parsed and stored as native Reminders.app tags. They stay in the title text AND become tag objects. Pure numbers like `#42` are ignored (treated as issue references, not tags).
 6. **`rem delete` prompts by default.** Pass `--force` / `--yes` / `-f` / `-y` when scripting to skip the confirmation.

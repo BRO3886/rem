@@ -68,6 +68,8 @@ rem add "Take out trash" --location "37.3318,-122.0312" --on-leave
 | `--on-arrive` | Fire location alarm on arrival (default with `--location`) |
 | `--on-leave` | Fire location alarm on departure |
 | `--repeat` | Set recurrence: `daily`, `weekly`, `monthly`, `yearly`, or `weekly on mon,wed,fri` |
+| `--repeat-until` | Stop repeating after this date, inclusive (requires `--repeat`) |
+| `--repeat-count` | Stop repeating after N occurrences (requires `--repeat`) |
 | `-i, --interactive` | Step-by-step interactive creation |
 
 The interactive form (`rem add -i`) has no `--silent` option. Reminders created interactively with a due date always get an auto-alarm. To create a silent reminder via the interactive flow, follow up with `rem update <id> --remind-me none` to clear the alarm.
@@ -145,6 +147,8 @@ rem update 6ECE --location none                             # clear geofence onl
 | `--on-arrive` | Fire location alarm on arrival (default with `--location`) |
 | `--on-leave` | Fire location alarm on departure |
 | `--repeat` | Set recurrence: `daily`, `weekly`, `monthly`, `yearly`, `none` to clear |
+| `--repeat-until` | Stop repeating after this date, inclusive; `none` to repeat forever. Without `--repeat`, changes only the end of the existing rule |
+| `--repeat-count` | Stop repeating after N occurrences. Without `--repeat`, changes only the end of the existing rule |
 | `-f, --force` / `-y, --yes` | Skip the shared-list move confirmation |
 | `-i, --interactive` | Interactive update |
 
